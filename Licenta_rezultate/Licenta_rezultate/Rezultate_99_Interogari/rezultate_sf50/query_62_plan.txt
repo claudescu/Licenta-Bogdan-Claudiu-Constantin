@@ -1,0 +1,64 @@
+                                                                                          QUERY PLAN                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1072195.55..1074273.23 rows=100 width=87) (actual time=40038.244..41953.326 rows=100.00 loops=1)
+   Buffers: shared hit=1424 read=939467, temp read=29092 written=43901
+   ->  Finalize GroupAggregate  (cost=1072195.55..1075187.41 rows=144 width=87) (actual time=39498.167..41413.198 rows=100.00 loops=1)
+         Group Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)), ship_mode.sm_type, web_site.web_name
+         Buffers: shared hit=1424 read=939467, temp read=29092 written=43901
+         ->  Gather Merge  (cost=1072195.55..1075174.09 rows=576 width=87) (actual time=39469.948..41412.954 rows=101.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=1424 read=939467, temp read=29092 written=43901
+               ->  Partial GroupAggregate  (cost=1071195.50..1074105.42 rows=144 width=87) (actual time=39468.806..41411.453 rows=101.00 loops=1)
+                     Group Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)), ship_mode.sm_type, web_site.web_name
+                     Buffers: shared hit=1424 read=939467, temp read=29092 written=43901
+                     ->  Sort  (cost=1071195.50..1071311.82 rows=46530 width=55) (actual time=39440.702..40712.227 rows=4379405.00 loops=1)
+                           Sort Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)) NULLS FIRST, ship_mode.sm_type NULLS FIRST, web_site.web_name NULLS FIRST
+                           Sort Method: external merge  Disk: 351136kB
+                           Buffers: shared hit=1424 read=939467, temp read=29092 written=43901
+                           ->  Hash Join  (cost=2075.43..1067588.05 rows=46530 width=55) (actual time=858.646..29640.346 rows=7230509.00 loops=1)
+                                 Hash Cond: (web_sales.ws_warehouse_sk = warehouse.w_warehouse_sk)
+                                 Buffers: shared hit=1424 read=939467
+                                 ->  Hash Join  (cost=2074.27..1066830.76 rows=46536 width=27) (actual time=823.164..27719.349 rows=7230743.00 loops=1)
+                                       Hash Cond: (web_sales.ws_ship_mode_sk = ship_mode.sm_ship_mode_sk)
+                                       Buffers: shared hit=1424 read=939466
+                                       ->  Hash Join  (cost=2072.82..1066189.39 rows=46546 width=23) (actual time=605.145..26442.857 rows=7231166.00 loops=1)
+                                             Hash Cond: (web_sales.ws_web_site_sk = web_site.web_site_sk)
+                                             Buffers: shared hit=1424 read=939465
+                                             ->  Parallel Hash Join  (cost=2071.33..1065547.86 rows=46556 width=20) (actual time=294.645..25167.560 rows=7232074.00 loops=1)
+                                                   Hash Cond: (web_sales.ws_ship_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=1424 read=939464
+                                                   ->  Parallel Seq Scan on web_sales  (cost=0.00..1029456.08 rows=8999208 width=20) (actual time=279.811..19534.556 rows=35996850.00 loops=1)
+                                                         Buffers: shared read=939464
+                                                   ->  Parallel Hash  (cost=2068.55..2068.55 rows=222 width=4) (actual time=13.588..13.590 rows=366.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=222 width=4) (actual time=8.944..13.527 rows=366.00 loops=1)
+                                                               Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                               Rows Removed by Filter: 72683
+                                                               Buffers: shared hit=1424
+                                             ->  Hash  (cost=1.22..1.22 rows=22 width=11) (actual time=310.436..310.437 rows=22.00 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared read=1
+                                                   ->  Seq Scan on web_site  (cost=0.00..1.22 rows=22 width=11) (actual time=310.395..310.404 rows=22.00 loops=1)
+                                                         Buffers: shared read=1
+                                       ->  Hash  (cost=1.20..1.20 rows=20 width=12) (actual time=217.996..217.997 rows=20.00 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             Buffers: shared read=1
+                                             ->  Seq Scan on ship_mode  (cost=0.00..1.20 rows=20 width=12) (actual time=217.955..217.963 rows=20.00 loops=1)
+                                                   Buffers: shared read=1
+                                 ->  Hash  (cost=1.07..1.07 rows=7 width=21) (actual time=35.455..35.460 rows=7.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared read=1
+                                       ->  Seq Scan on warehouse  (cost=0.00..1.07 rows=7 width=21) (actual time=35.437..35.440 rows=7.00 loops=1)
+                                             Buffers: shared read=1
+ Planning:
+   Buffers: shared hit=213 read=2
+ Planning Time: 3.045 ms
+ JIT:
+   Functions: 45
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 6.959 ms (Deform 1.700 ms), Inlining 154.641 ms, Optimization 215.157 ms, Emission 170.622 ms, Total 547.379 ms
+ Execution Time: 43485.529 ms
+(60 rows)
+

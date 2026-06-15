@@ -1,0 +1,88 @@
+                                                                                                QUERY PLAN                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=93547.48..93547.73 rows=100 width=106) (actual time=2557.592..2564.407 rows=100.00 loops=1)
+   Buffers: shared hit=27555, temp read=849 written=1581
+   ->  Sort  (cost=93547.48..94149.57 rows=240837 width=106) (actual time=2557.589..2564.396 rows=100.00 loops=1)
+         Sort Key: (sum(sr.sr_net_loss)) DESC
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=27555, temp read=849 written=1581
+         ->  HashAggregate  (cost=80730.31..84342.86 rows=240837 width=106) (actual time=2130.752..2490.760 rows=265584.00 loops=1)
+               Group Key: ca.ca_state, s.s_store_name, i.i_category, cd.cd_gender, cd.cd_marital_status, hd.hd_buy_potential, ib.ib_lower_bound, d.d_year
+               Batches: 5  Memory Usage: 131129kB  Disk Usage: 7632kB
+               Buffers: shared hit=27552, temp read=849 written=1581
+               ->  Gather  (cost=18401.67..74107.29 rows=240837 width=46) (actual time=352.467..1809.066 rows=268146.00 loops=1)
+                     Workers Planned: 3
+                     Workers Launched: 0
+                     Buffers: shared hit=27552
+                     ->  Parallel Hash Join  (cost=17401.67..49023.59 rows=77689 width=46) (actual time=351.462..1774.051 rows=268146.00 loops=1)
+                           Hash Cond: (sr.sr_returned_date_sk = d.d_date_sk)
+                           Buffers: shared hit=27552
+                           ->  Hash Join  (cost=15010.84..45873.67 rows=80557 width=46) (actual time=316.047..1656.676 rows=268768.00 loops=1)
+                                 Hash Cond: (sr.sr_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=26128
+                                 ->  Hash Join  (cost=13885.84..43641.02 rows=80557 width=44) (actual time=305.466..1534.645 rows=268768.00 loops=1)
+                                       Hash Cond: (sr.sr_hdemo_sk = hd.hd_demo_sk)
+                                       Buffers: shared hit=25408
+                                       ->  Hash Join  (cost=13573.39..42209.99 rows=83465 width=36) (actual time=301.424..1449.741 rows=270045.00 loops=1)
+                                             Hash Cond: (sr.sr_store_sk = s.s_store_sk)
+                                             Buffers: shared hit=25357
+                                             ->  Parallel Hash Join  (cost=13572.12..41049.65 rows=86513 width=35) (actual time=301.373..1399.412 rows=272646.00 loops=1)
+                                                   Hash Cond: (sr.sr_customer_sk = c.c_customer_sk)
+                                                   Buffers: shared hit=25356
+                                                   ->  Parallel Hash Join  (cost=7522.76..34155.57 rows=89551 width=36) (actual time=204.132..1138.200 rows=277675.00 loops=1)
+                                                         Hash Cond: (cd.cd_demo_sk = sr.sr_cdemo_sk)
+                                                         Buffers: shared hit=22564
+                                                         ->  Parallel Seq Scan on customer_demographics cd  (cost=0.00..23936.13 rows=619613 width=8) (actual time=0.007..128.174 rows=1920800.00 loops=1)
+                                                               Buffers: shared hit=17740
+                                                         ->  Parallel Hash  (cost=6023.45..6023.45 rows=119945 width=36) (actual time=200.358..200.360 rows=287867.00 loops=1)
+                                                               Buckets: 524288  Batches: 1  Memory Usage: 23520kB
+                                                               Buffers: shared hit=4824
+                                                               ->  Parallel Seq Scan on store_returns sr  (cost=0.00..6023.45 rows=119945 width=36) (actual time=0.012..85.167 rows=287867.00 loops=1)
+                                                                     Buffers: shared hit=4824
+                                                   ->  Parallel Hash  (cost=5314.07..5314.07 rows=58824 width=7) (actual time=96.552..96.555 rows=100000.00 loops=1)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 4960kB
+                                                         Buffers: shared hit=2792
+                                                         ->  Hash Join  (cost=2045.00..5314.07 rows=58824 width=7) (actual time=21.621..71.466 rows=100000.00 loops=1)
+                                                               Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                                               Buffers: shared hit=2792
+                                                               ->  Parallel Seq Scan on customer c  (cost=0.00..2460.24 rows=58824 width=8) (actual time=0.005..10.104 rows=100000.00 loops=1)
+                                                                     Buffers: shared hit=1872
+                                                               ->  Hash  (cost=1420.00..1420.00 rows=50000 width=7) (actual time=21.224..21.225 rows=50000.00 loops=1)
+                                                                     Buckets: 65536  Batches: 1  Memory Usage: 2460kB
+                                                                     Buffers: shared hit=920
+                                                                     ->  Seq Scan on customer_address ca  (cost=0.00..1420.00 rows=50000 width=7) (actual time=0.011..11.827 rows=50000.00 loops=1)
+                                                                           Buffers: shared hit=920
+                                             ->  Hash  (cost=1.12..1.12 rows=12 width=9) (actual time=0.028..0.029 rows=12.00 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=1
+                                                   ->  Seq Scan on store s  (cost=0.00..1.12 rows=12 width=9) (actual time=0.017..0.019 rows=12.00 loops=1)
+                                                         Buffers: shared hit=1
+                                       ->  Hash  (cost=222.45..222.45 rows=7200 width=16) (actual time=3.983..3.987 rows=7200.00 loops=1)
+                                             Buckets: 8192  Batches: 1  Memory Usage: 416kB
+                                             Buffers: shared hit=51
+                                             ->  Hash Join  (cost=1.45..222.45 rows=7200 width=16) (actual time=0.076..2.466 rows=7200.00 loops=1)
+                                                   Hash Cond: (hd.hd_income_band_sk = ib.ib_income_band_sk)
+                                                   Buffers: shared hit=51
+                                                   ->  Seq Scan on household_demographics hd  (cost=0.00..122.00 rows=7200 width=16) (actual time=0.024..0.654 rows=7200.00 loops=1)
+                                                         Buffers: shared hit=50
+                                                   ->  Hash  (cost=1.20..1.20 rows=20 width=8) (actual time=0.025..0.026 rows=20.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                         Buffers: shared hit=1
+                                                         ->  Seq Scan on income_band ib  (cost=0.00..1.20 rows=20 width=8) (actual time=0.015..0.018 rows=20.00 loops=1)
+                                                               Buffers: shared hit=1
+                                 ->  Hash  (cost=900.00..900.00 rows=18000 width=10) (actual time=10.362..10.363 rows=18000.00 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1037kB
+                                       Buffers: shared hit=720
+                                       ->  Seq Scan on item i  (cost=0.00..900.00 rows=18000 width=10) (actual time=0.021..6.726 rows=18000.00 loops=1)
+                                             Buffers: shared hit=720
+                           ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=33.403..33.404 rows=73049.00 loops=1)
+                                 Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                 Buffers: shared hit=1424
+                                 ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.029..17.589 rows=73049.00 loops=1)
+                                       Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=232
+ Planning Time: 4.361 ms
+ Execution Time: 2569.523 ms
+(84 rows)
+

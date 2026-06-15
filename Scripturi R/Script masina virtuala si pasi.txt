@@ -1,0 +1,77 @@
+TPC-DS Benchmark — SF=X
+Ghid personal pas cu pas pt rulare script pe masina virtuala
+
+
+PASUL 1 — Conectare la server
+
+ssh -i "C:\Users\claud\.ssh\cheie_ssh" ubuntu@192.168.254.34
+
+
+PASUL 2 — Pornește tmux (OBLIGATORIU)
+
+tmux new -s benchmark_sfX
+
+# dacă sesiunea există deja:
+tmux attach -t benchmark_sfX
+
+  Ctrl+B, D  =  ieși fără să oprești procesul
+  tmux attach  =  te reconectezi
+
+
+PASUL 3 — Generare date SF=X cu DuckDB
+
+duckdb -c "INSTALL tpcds; LOAD tpcds; CALL dsdgen(sf=X);
+  EXPORT DATABASE '/home/ubuntu/data_sfX' (FORMAT CSV, DELIMITER '|');"
+
+PASUL 4 — Import în PostgreSQL
+
+sudo -u postgres psql -c "CREATE DATABASE tpcds_sfX;"
+chmod 755 /home/ubuntu
+chmod -R 755 ~/data_sfX
+sudo -u postgres psql -d tpcds_sfX -f ~/data_sfX/schema.sql
+sed -i "s|'data_sfX/|'/home/ubuntu/data_sfX/|g" ~/data_sfX/load.sql
+sudo -u postgres psql -d tpcds_sfX -f ~/data_sfX/load.sql
+
+
+PASUL 5 — Actualizează statisticile
+
+sudo -u postgres psql -d tpcds_sfX -c "ANALYZE;"
+
+  # rulează o singură dată după import — necesar pentru planuri corecte
+
+PASUL 6 — Creează și rulează scriptul de benchmark
+
+cat << 'SCRIPT' > ~/run_benchmark_sfX.sh
+#!/bin/bash
+SF=X
+DB="tpcds_sfX"
+RESULTS_DIR="$HOME/rezultate_sfX_$(date +%Y%m%d_%H%M)"
+mkdir -p "$RESULTS_DIR"
+echo "=== BENCHMARK TPC-DS SF=X - $(date) ===" | tee "$RESULTS_DIR/summary.log"
+for i in $(seq 1 99); do
+  QFILE="$HOME/queries_tpcds/query_${i}.sql"
+  [ ! -f "$QFILE" ] && echo "LIPSA: query_${i}.sql" | tee -a "$RESULTS_DIR/summary.log" && continue
+  echo "--- Query $i - $(date +%H:%M:%S) ---" | tee -a "$RESULTS_DIR/summary.log"
+  TMPFILE="$RESULTS_DIR/tmp_explain_${i}.sql"
+  echo "EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)" > "$TMPFILE"
+  cat "$QFILE" >> "$TMPFILE"
+  sudo -u postgres psql -d "$DB" -f "$TMPFILE" \
+    > "$RESULTS_DIR/query_$(printf '%02d' $i)_plan.txt" 2>&1
+  rm -f "$TMPFILE"
+  grep -E "Planning Time:|Execution Time:|ERROR" \
+    "$RESULTS_DIR/query_$(printf '%02d' $i)_plan.txt" \
+    | tee -a "$RESULTS_DIR/summary.log"
+done
+echo "=== DONE - $(date) ===" | tee -a "$RESULTS_DIR/summary.log"
+SCRIPT
+
+chmod +x ~/run_benchmark_sfX.sh
+~/run_benchmark_sfX.sh
+
+PASUL 7 — Copiază rezultatele pe PC
+
+scp -i "C:\Users\claud\.ssh\cheie_ssh" -r \
+  ubuntu@192.168.254.34:~/rezultate_sfX_* \
+  "C:\Users\claud\OneDrive\Desktop\Rezultate_licenta\rezultate_sfX"
+
+

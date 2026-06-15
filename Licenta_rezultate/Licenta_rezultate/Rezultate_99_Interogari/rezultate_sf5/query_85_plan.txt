@@ -1,0 +1,96 @@
+                                                                                                                                                                                                                                                                                                                        QUERY PLAN                                                                                                                                                                                                                                                                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=207517.20..207517.20 rows=1 width=144) (actual time=1043.394..1044.562 rows=7.00 loops=1)
+   Buffers: shared hit=191395
+   ->  Sort  (cost=207517.20..207517.20 rows=1 width=144) (actual time=992.351..993.518 rows=7.00 loops=1)
+         Sort Key: ("substring"((reason.r_reason_desc)::text, 1, 20)), (avg(web_sales.ws_quantity)), (avg(web_returns.wr_refunded_cash)), (avg(web_returns.wr_fee))
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=191395
+         ->  GroupAggregate  (cost=205170.67..207517.19 rows=1 width=144) (actual time=874.095..993.470 rows=7.00 loops=1)
+               Group Key: reason.r_reason_desc
+               Buffers: shared hit=191392
+               ->  Nested Loop  (cost=205170.67..207517.16 rows=1 width=32) (actual time=825.019..993.375 rows=7.00 loops=1)
+                     Join Filter: (web_sales.ws_sold_date_sk = date_dim.d_date_sk)
+                     Rows Removed by Join Filter: 13535
+                     Buffers: shared hit=191392
+                     ->  Nested Loop  (cost=205170.67..205175.53 rows=1 width=36) (actual time=821.778..823.678 rows=37.00 loops=1)
+                           Join Filter: (web_sales.ws_web_page_sk = web_page.wp_web_page_sk)
+                           Rows Removed by Join Filter: 4477
+                           Buffers: shared hit=138704
+                           ->  Gather Merge  (cost=205170.67..205170.79 rows=1 width=40) (actual time=821.696..822.938 rows=37.00 loops=1)
+                                 Workers Planned: 3
+                                 Workers Launched: 3
+                                 Buffers: shared hit=138630
+                                 ->  Sort  (cost=204170.63..204170.63 rows=1 width=40) (actual time=792.158..792.172 rows=9.25 loops=4)
+                                       Sort Key: reason.r_reason_desc
+                                       Sort Method: quicksort  Memory: 25kB
+                                       Buffers: shared hit=138630
+                                       Worker 0:  Sort Method: quicksort  Memory: 25kB
+                                       Worker 1:  Sort Method: quicksort  Memory: 25kB
+                                       Worker 2:  Sort Method: quicksort  Memory: 25kB
+                                       ->  Nested Loop  (cost=170361.14..204170.62 rows=1 width=40) (actual time=732.629..792.112 rows=9.25 loops=4)
+                                             Join Filter: (web_returns.wr_reason_sk = reason.r_reason_sk)
+                                             Rows Removed by Join Filter: 352
+                                             Buffers: shared hit=138606
+                                             ->  Parallel Hash Join  (cost=170361.14..204168.74 rows=1 width=28) (actual time=732.569..791.970 rows=9.25 loops=4)
+                                                   Hash Cond: ((cd1.cd_demo_sk = web_returns.wr_refunded_cdemo_sk) AND ((cd1.cd_marital_status)::text = (cd2.cd_marital_status)::text) AND ((cd1.cd_education_status)::text = (cd2.cd_education_status)::text))
+                                                   Join Filter: ((((cd1.cd_marital_status)::text = 'M'::text) AND ((cd1.cd_education_status)::text = 'Advanced Degree'::text) AND (web_sales.ws_sales_price >= 100.00) AND (web_sales.ws_sales_price <= 150.00)) OR (((cd1.cd_marital_status)::text = 'S'::text) AND ((cd1.cd_education_status)::text = 'College'::text) AND (web_sales.ws_sales_price >= 50.00) AND (web_sales.ws_sales_price <= 100.00)) OR (((cd1.cd_marital_status)::text = 'W'::text) AND ((cd1.cd_education_status)::text = '2 yr Degree'::text) AND (web_sales.ws_sales_price >= 150.00) AND (web_sales.ws_sales_price <= 200.00)))
+                                                   Rows Removed by Join Filter: 20
+                                                   Buffers: shared hit=138569
+                                                   ->  Parallel Seq Scan on customer_demographics cd1  (cost=0.00..33230.32 rows=51310 width=16) (actual time=0.031..63.366 rows=41160.00 loops=4)
+                                                         Filter: ((((cd_marital_status)::text = 'M'::text) AND ((cd_education_status)::text = 'Advanced Degree'::text)) OR (((cd_marital_status)::text = 'S'::text) AND ((cd_education_status)::text = 'College'::text)) OR (((cd_marital_status)::text = 'W'::text) AND ((cd_education_status)::text = '2 yr Degree'::text)))
+                                                         Rows Removed by Filter: 439040
+                                                         Buffers: shared hit=17740
+                                                   ->  Parallel Hash  (cost=170361.12..170361.12 rows=1 width=50) (actual time=723.385..723.394 rows=357.50 loops=4)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 168kB
+                                                         Buffers: shared hit=120829
+                                                         ->  Parallel Hash Join  (cost=144101.43..170361.12 rows=1 width=50) (actual time=646.630..723.162 rows=357.50 loops=4)
+                                                               Hash Cond: (cd2.cd_demo_sk = web_returns.wr_returning_cdemo_sk)
+                                                               Buffers: shared hit=120829
+                                                               ->  Parallel Seq Scan on customer_demographics cd2  (cost=0.00..23936.13 rows=619613 width=16) (actual time=0.015..29.440 rows=480200.00 loops=4)
+                                                                     Buffers: shared hit=17740
+                                                               ->  Parallel Hash  (cost=144101.42..144101.42 rows=1 width=42) (actual time=646.497..646.504 rows=365.75 loops=4)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 136kB
+                                                                     Buffers: shared hit=103089
+                                                                     ->  Parallel Hash Join  (cost=13810.24..144101.42 rows=1 width=42) (actual time=124.004..646.094 rows=365.75 loops=4)
+                                                                           Hash Cond: ((web_sales.ws_item_sk = web_returns.wr_item_sk) AND (web_sales.ws_order_number = web_returns.wr_order_number))
+                                                                           Join Filter: ((((customer_address.ca_state)::text = ANY ('{IN,OH,NJ}'::text[])) AND (web_sales.ws_net_profit >= '100'::numeric) AND (web_sales.ws_net_profit <= '200'::numeric)) OR (((customer_address.ca_state)::text = ANY ('{WI,CT,KY}'::text[])) AND (web_sales.ws_net_profit >= '150'::numeric) AND (web_sales.ws_net_profit <= '300'::numeric)) OR (((customer_address.ca_state)::text = ANY ('{LA,IA,AR}'::text[])) AND (web_sales.ws_net_profit >= '50'::numeric) AND (web_sales.ws_net_profit <= '250'::numeric)))
+                                                                           Rows Removed by Join Filter: 219
+                                                                           Buffers: shared hit=103089
+                                                                           ->  Parallel Seq Scan on web_sales  (cost=0.00..129954.64 rows=44868 width=32) (actual time=0.116..513.461 rows=32014.00 loops=4)
+                                                                                 Filter: ((((ws_sales_price >= 100.00) AND (ws_sales_price <= 150.00)) OR ((ws_sales_price >= 50.00) AND (ws_sales_price <= 100.00)) OR ((ws_sales_price >= 150.00) AND (ws_sales_price <= 200.00))) AND (((ws_net_profit >= '100'::numeric) AND (ws_net_profit <= '200'::numeric)) OR ((ws_net_profit >= '150'::numeric) AND (ws_net_profit <= '300'::numeric)) OR ((ws_net_profit >= '50'::numeric) AND (ws_net_profit <= '250'::numeric))))
+                                                                                 Rows Removed by Filter: 867862
+                                                                                 Buffers: shared hit=93960
+                                                                           ->  Parallel Hash  (cost=13433.32..13433.32 rows=25128 width=35) (actual time=122.161..122.166 rows=16419.25 loops=4)
+                                                                                 Buckets: 65536  Batches: 1  Memory Usage: 5184kB
+                                                                                 Buffers: shared hit=9129
+                                                                                 ->  Parallel Hash Join  (cost=4562.30..13433.32 rows=25128 width=35) (actual time=82.988..114.603 rows=16419.25 loops=4)
+                                                                                       Hash Cond: (web_returns.wr_refunded_addr_sk = customer_address.ca_address_sk)
+                                                                                       Buffers: shared hit=9129
+                                                                                       ->  Parallel Seq Scan on web_returns  (cost=0.00..8161.61 rows=149761 width=36) (actual time=0.046..9.948 rows=89856.50 loops=4)
+                                                                                             Buffers: shared hit=6664
+                                                                                       ->  Parallel Hash  (cost=4383.94..4383.94 rows=14269 width=7) (actual time=82.743..82.745 rows=6603.00 loops=4)
+                                                                                             Buckets: 32768  Batches: 1  Memory Usage: 1408kB
+                                                                                             Buffers: shared hit=2465
+                                                                                             ->  Parallel Seq Scan on customer_address  (cost=0.00..4383.94 rows=14269 width=7) (actual time=46.422..57.830 rows=6603.00 loops=4)
+                                                                                                   Filter: (((ca_country)::text = 'United States'::text) AND (((ca_state)::text = ANY ('{IN,OH,NJ}'::text[])) OR ((ca_state)::text = ANY ('{WI,CT,KY}'::text[])) OR ((ca_state)::text = ANY ('{LA,IA,AR}'::text[]))))
+                                                                                                   Rows Removed by Filter: 27897
+                                                                                                   Buffers: shared hit=2465
+                                             ->  Seq Scan on reason  (cost=0.00..1.39 rows=39 width=20) (actual time=0.007..0.009 rows=39.00 loops=37)
+                                                   Buffers: shared hit=37
+                           ->  Seq Scan on web_page  (cost=0.00..3.22 rows=122 width=4) (actual time=0.003..0.010 rows=122.00 loops=37)
+                                 Buffers: shared hit=74
+                     ->  Seq Scan on date_dim  (cost=0.00..2337.11 rows=361 width=4) (actual time=2.274..4.567 rows=366.00 loops=37)
+                           Filter: (d_year = 2000)
+                           Rows Removed by Filter: 72683
+                           Buffers: shared hit=52688
+ Planning:
+   Buffers: shared hit=309
+ Planning Time: 6.021 ms
+ JIT:
+   Functions: 224
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 23.263 ms (Deform 13.812 ms), Inlining 0.000 ms, Optimization 12.618 ms, Emission 224.339 ms, Total 260.220 ms
+ Execution Time: 1067.164 ms
+(92 rows)
+

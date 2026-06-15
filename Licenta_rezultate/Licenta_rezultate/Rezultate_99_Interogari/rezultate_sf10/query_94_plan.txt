@@ -1,0 +1,72 @@
+                                                                                              QUERY PLAN                                                                                              
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=470595.96..470595.96 rows=1 width=72) (actual time=9576699.785..9576751.092 rows=1.00 loops=1)
+   Buffers: shared hit=3200621790
+   ->  Sort  (cost=470595.96..470595.96 rows=1 width=72) (actual time=9576674.651..9576725.955 rows=1.00 loops=1)
+         Sort Key: (count(DISTINCT ws1.ws_order_number))
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=3200621790
+         ->  Aggregate  (cost=470595.94..470595.95 rows=1 width=72) (actual time=9576674.601..9576725.906 rows=1.00 loops=1)
+               Buffers: shared hit=3200621787
+               ->  Sort  (cost=470595.92..470595.93 rows=1 width=16) (actual time=9576674.427..9576725.746 rows=335.00 loops=1)
+                     Sort Key: ws1.ws_order_number
+                     Sort Method: quicksort  Memory: 37kB
+                     Buffers: shared hit=3200621787
+                     ->  Nested Loop  (cost=247874.97..470595.91 rows=1 width=16) (actual time=9430.760..9576722.988 rows=335.00 loops=1)
+                           Join Filter: (ws1.ws_web_site_sk = web_site.web_site_sk)
+                           Rows Removed by Join Filter: 17165
+                           Buffers: shared hit=3200621784
+                           ->  Nested Loop  (cost=247874.97..470593.30 rows=1 width=20) (actual time=9286.503..9576675.422 rows=2500.00 loops=1)
+                                 Join Filter: (ws1.ws_ship_addr_sk = customer_address.ca_address_sk)
+                                 Rows Removed by Join Filter: 669447623
+                                 Buffers: shared hit=3200616784
+                                 ->  Nested Loop  (cost=247874.97..462985.52 rows=1 width=24) (actual time=896.161..7326368.586 rows=84303.00 loops=1)
+                                       Join Filter: (ws1.ws_ship_date_sk = date_dim.d_date_sk)
+                                       Rows Removed by Join Filter: 121201082
+                                       Buffers: shared hit=2831706856
+                                       ->  Gather  (cost=247874.97..460465.03 rows=1 width=28) (actual time=893.182..2492.530 rows=1988285.00 loops=1)
+                                             Workers Planned: 4
+                                             Workers Launched: 4
+                                             Buffers: shared hit=389016
+                                             ->  Parallel Hash Semi Join  (cost=246874.97..459464.93 rows=1 width=28) (actual time=866.185..3937.500 rows=397657.00 loops=5)
+                                                   Hash Cond: (ws1.ws_order_number = ws2.ws_order_number)
+                                                   Join Filter: (ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
+                                                   Rows Removed by Join Filter: 84551
+                                                   Buffers: shared hit=389016
+                                                   ->  Parallel Hash Anti Join  (cost=18540.16..231130.10 rows=1 width=32) (actual time=56.770..2423.140 rows=397755.60 loops=5)
+                                                         Hash Cond: (ws1.ws_order_number = wr1.wr_order_number)
+                                                         Buffers: shared hit=201168
+                                                         ->  Parallel Seq Scan on web_sales ws1  (cost=0.00..205842.14 rows=1799414 width=32) (actual time=0.009..728.295 rows=1439513.20 loops=5)
+                                                               Buffers: shared hit=187848
+                                                         ->  Parallel Hash  (cost=15640.07..15640.07 rows=232007 width=4) (actual time=55.935..55.940 rows=143844.40 loops=5)
+                                                               Buckets: 1048576  Batches: 1  Memory Usage: 36416kB
+                                                               Buffers: shared hit=13320
+                                                               ->  Parallel Seq Scan on web_returns wr1  (cost=0.00..15640.07 rows=232007 width=4) (actual time=0.057..28.383 rows=143844.40 loops=5)
+                                                                     Buffers: shared hit=13320
+                                                   ->  Parallel Hash  (cost=205842.14..205842.14 rows=1799414 width=8) (actual time=797.542..797.557 rows=1439513.20 loops=5)
+                                                         Buckets: 8388608  Batches: 1  Memory Usage: 347168kB
+                                                         Buffers: shared hit=187848
+                                                         ->  Parallel Seq Scan on web_sales ws2  (cost=0.00..205842.14 rows=1799414 width=8) (actual time=19.627..355.600 rows=1439513.20 loops=5)
+                                                               Buffers: shared hit=187848
+                                       ->  Seq Scan on date_dim  (cost=0.00..2519.73 rows=61 width=4) (actual time=1.734..3.677 rows=61.00 loops=1988285)
+                                             Filter: ((d_date >= '1999-02-01'::date) AND (d_date <= '1999-04-02'::date))
+                                             Rows Removed by Filter: 72988
+                                             Buffers: shared hit=2831317840
+                                 ->  Seq Scan on customer_address  (cost=0.00..7501.00 rows=8542 width=4) (actual time=0.007..26.292 rows=7941.00 loops=84303)
+                                       Filter: ((ca_state)::text = 'IL'::text)
+                                       Rows Removed by Filter: 242059
+                                       Buffers: shared hit=368909928
+                           ->  Seq Scan on web_site  (cost=0.00..2.52 rows=7 width=4) (actual time=0.009..0.013 rows=7.00 loops=2500)
+                                 Filter: ((web_company_name)::text = 'pri'::text)
+                                 Rows Removed by Filter: 35
+                                 Buffers: shared hit=5000
+ Planning:
+   Buffers: shared hit=166 read=2
+ Planning Time: 87.975 ms
+ JIT:
+   Functions: 114
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 10.262 ms (Deform 7.082 ms), Inlining 0.000 ms, Optimization 13.045 ms, Emission 110.560 ms, Total 133.867 ms
+ Execution Time: 9576775.971 ms
+(68 rows)
+

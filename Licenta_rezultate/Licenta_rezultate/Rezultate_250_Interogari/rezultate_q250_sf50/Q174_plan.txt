@@ -1,0 +1,45 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=243207.22..243207.47 rows=100 width=130) (actual time=28937.228..28938.020 rows=100.00 loops=1)
+   Buffers: shared hit=76264 read=70131
+   ->  Sort  (cost=243207.22..243258.76 rows=20616 width=130) (actual time=28856.673..28857.457 rows=100.00 loops=1)
+         Sort Key: (sum(cr.cr_net_loss)) DESC
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=76264 read=70131
+         ->  Finalize HashAggregate  (cost=241182.31..242419.29 rows=20616 width=130) (actual time=28764.708..28840.253 rows=61865.00 loops=1)
+               Group Key: i.i_product_name, i.i_category
+               Filter: (sum(cr.cr_net_loss) > '100'::numeric)
+               Batches: 1  Memory Usage: 75793kB
+               Buffers: shared hit=76261 read=70131
+               ->  Gather  (cost=210567.05..236234.39 rows=247396 width=130) (actual time=28122.727..28239.338 rows=309321.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=76261 read=70131
+                     ->  Partial HashAggregate  (cost=209567.05..210494.79 rows=61849 width=130) (actual time=28089.963..28182.101 rows=61864.20 loops=5)
+                           Group Key: i.i_product_name, i.i_category
+                           Batches: 1  Memory Usage: 55313kB
+                           Buffers: shared hit=76261 read=70131
+                           Worker 0:  Batches: 1  Memory Usage: 55313kB
+                           Worker 1:  Batches: 1  Memory Usage: 55313kB
+                           Worker 2:  Batches: 1  Memory Usage: 55313kB
+                           Worker 3:  Batches: 1  Memory Usage: 55313kB
+                           ->  Parallel Hash Join  (cost=3332.59..182560.08 rows=1800465 width=42) (actual time=130.592..25567.652 rows=1440327.40 loops=5)
+                                 Hash Cond: (cr.cr_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=76261 read=70131
+                                 ->  Parallel Seq Scan on catalog_returns cr  (cost=0.00..161884.65 rows=1800465 width=20) (actual time=96.994..18200.383 rows=1440327.40 loops=5)
+                                       Buffers: shared hit=73749 read=70131
+                                 ->  Parallel Hash  (cost=2876.71..2876.71 rows=36471 width=30) (actual time=33.257..33.260 rows=12400.00 loops=5)
+                                       Buckets: 65536  Batches: 1  Memory Usage: 4640kB
+                                       Buffers: shared hit=2512
+                                       ->  Parallel Seq Scan on item i  (cost=0.00..2876.71 rows=36471 width=30) (actual time=17.074..25.849 rows=12400.00 loops=5)
+                                             Buffers: shared hit=2512
+ Planning:
+   Buffers: shared hit=223
+ Planning Time: 13.532 ms
+ JIT:
+   Functions: 99
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 10.438 ms (Deform 5.875 ms), Inlining 0.000 ms, Optimization 5.479 ms, Emission 161.172 ms, Total 177.089 ms
+ Execution Time: 28988.289 ms
+(41 rows)
+

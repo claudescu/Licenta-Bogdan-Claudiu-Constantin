@@ -1,0 +1,80 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=343730.18..343730.43 rows=100 width=196) (actual time=1292.014..1292.530 rows=100.00 loops=1)
+   Buffers: shared hit=280129
+   CTE results
+     ->  Hash Join  (cost=35067.79..343594.31 rows=869 width=43) (actual time=125.384..1063.251 rows=36241.00 loops=1)
+           Hash Cond: (store_sales.ss_item_sk = item.i_item_sk)
+           Buffers: shared hit=280126
+           ->  Gather  (cost=31660.79..340175.36 rows=869 width=26) (actual time=97.391..1011.842 rows=36241.00 loops=1)
+                 Workers Planned: 4
+                 Workers Launched: 4
+                 Buffers: shared hit=277934
+                 ->  Hash Join  (cost=30660.79..339088.46 rows=217 width=26) (actual time=69.331..1047.786 rows=7248.20 loops=5)
+                       Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                       Buffers: shared hit=277934
+                       ->  Parallel Hash Join  (cost=30657.50..339082.13 rows=232 width=27) (actual time=52.319..1029.238 rows=7616.80 loops=5)
+                             Hash Cond: (store_sales.ss_cdemo_sk = customer_demographics.cd_demo_sk)
+                             Buffers: shared hit=277924
+                             ->  Parallel Hash Join  (cost=1963.78..310323.92 rows=16996 width=31) (actual time=2.462..935.503 rows=550519.80 loops=5)
+                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                   Buffers: shared hit=260184
+                                   ->  Parallel Seq Scan on store_sales  (cost=0.00..294760.24 rows=3600024 width=35) (actual time=0.031..355.641 rows=2880010.40 loops=5)
+                                         Buffers: shared hit=258760
+                                   ->  Parallel Hash  (cost=1961.12..1961.12 rows=212 width=4) (actual time=2.339..2.341 rows=73.00 loops=5)
+                                         Buckets: 1024  Batches: 1  Memory Usage: 168kB
+                                         Buffers: shared hit=1424
+                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=212 width=4) (actual time=1.113..2.223 rows=73.00 loops=5)
+                                               Filter: (d_year = 2002)
+                                               Rows Removed by Filter: 14537
+                                               Buffers: shared hit=1424
+                             ->  Parallel Hash  (cost=28583.23..28583.23 rows=8840 width=4) (actual time=48.395..48.396 rows=5488.00 loops=5)
+                                   Buckets: 32768  Batches: 1  Memory Usage: 1376kB
+                                   Buffers: shared hit=17740
+                                   ->  Parallel Seq Scan on customer_demographics  (cost=0.00..28583.23 rows=8840 width=4) (actual time=0.036..46.806 rows=5488.00 loops=5)
+                                         Filter: (((cd_gender)::text = 'M'::text) AND ((cd_marital_status)::text = 'S'::text) AND ((cd_education_status)::text = 'College'::text))
+                                         Rows Removed by Filter: 378672
+                                         Buffers: shared hit=17740
+                       ->  Hash  (cost=2.65..2.65 rows=51 width=7) (actual time=16.955..16.956 rows=51.00 loops=5)
+                             Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                             Buffers: shared hit=10
+                             ->  Seq Scan on store  (cost=0.00..2.65 rows=51 width=7) (actual time=16.909..16.933 rows=51.00 loops=5)
+                                   Filter: ((s_state)::text = 'TN'::text)
+                                   Rows Removed by Filter: 1
+                                   Buffers: shared hit=10
+           ->  Hash  (cost=2732.00..2732.00 rows=54000 width=21) (actual time=27.578..27.579 rows=54000.00 loops=1)
+                 Buckets: 65536  Batches: 1  Memory Usage: 3466kB
+                 Buffers: shared hit=2192
+                 ->  Seq Scan on item  (cost=0.00..2732.00 rows=54000 width=21) (actual time=0.058..15.612 rows=54000.00 loops=1)
+                       Buffers: shared hit=2192
+   ->  Sort  (cost=135.87..137.89 rows=809 width=196) (actual time=1240.662..1240.668 rows=100.00 loops=1)
+         Sort Key: results.i_item_id NULLS FIRST, results.s_state NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 40kB
+         Buffers: shared hit=280129
+         ->  Append  (cost=30.41..104.95 rows=809 width=196) (actual time=1123.686..1231.995 rows=39749.00 loops=1)
+               Buffers: shared hit=280126
+               ->  HashAggregate  (cost=30.41..38.49 rows=404 width=196) (actual time=1123.684..1160.819 rows=19874.00 loops=1)
+                     Group Key: results.i_item_id, results.s_state
+                     Batches: 1  Memory Usage: 23073kB
+                     Buffers: shared hit=280126
+                     ->  CTE Scan on results  (cost=0.00..17.38 rows=869 width=110) (actual time=125.419..1078.577 rows=36241.00 loops=1)
+                           Storage: Memory  Maximum Storage: 3108kB
+                           Buffers: shared hit=280126
+               ->  HashAggregate  (cost=28.24..36.32 rows=404 width=196) (actual time=36.170..59.956 rows=19874.00 loops=1)
+                     Group Key: results_1.i_item_id
+                     Batches: 1  Memory Usage: 23073kB
+                     ->  CTE Scan on results results_1  (cost=0.00..17.38 rows=869 width=78) (actual time=0.002..4.403 rows=36241.00 loops=1)
+                           Storage: Memory  Maximum Storage: 3108kB
+               ->  Aggregate  (cost=26.08..26.09 rows=1 width=196) (actual time=8.706..8.707 rows=1.00 loops=1)
+                     ->  CTE Scan on results results_2  (cost=0.00..17.38 rows=869 width=46) (actual time=0.001..2.209 rows=36241.00 loops=1)
+                           Storage: Memory  Maximum Storage: 3108kB
+ Planning:
+   Buffers: shared hit=242
+ Planning Time: 2.238 ms
+ JIT:
+   Functions: 185
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 13.314 ms (Deform 7.212 ms), Inlining 0.000 ms, Optimization 6.245 ms, Emission 129.800 ms, Total 149.360 ms
+ Execution Time: 1325.277 ms
+(76 rows)
+

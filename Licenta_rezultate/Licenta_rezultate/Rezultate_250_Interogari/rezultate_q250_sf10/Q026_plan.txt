@@ -1,0 +1,45 @@
+                                                                                                           QUERY PLAN                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=692518.12..692518.37 rows=100 width=110) (actual time=12462.121..12462.679 rows=100.00 loops=1)
+   Buffers: shared hit=11030 read=510530
+   ->  Sort  (cost=692518.12..692602.86 rows=33898 width=110) (actual time=11993.259..11993.809 rows=100.00 loops=1)
+         Sort Key: (round((((i.i_current_price - i.i_wholesale_cost) / NULLIF(i.i_current_price, '0'::numeric)) * '100'::numeric), 2))
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=11030 read=510530
+         ->  Finalize GroupAggregate  (cost=671767.19..691222.56 rows=33898 width=110) (actual time=11961.668..11987.852 rows=22587.00 loops=1)
+               Group Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+               Buffers: shared hit=11030 read=510530
+               ->  Gather Merge  (cost=671767.19..688002.25 rows=135592 width=78) (actual time=11961.612..11965.357 rows=22587.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 0
+                     Buffers: shared hit=11030 read=510530
+                     ->  Sort  (cost=670767.13..670851.88 rows=33898 width=78) (actual time=11960.986..11962.482 rows=22587.00 loops=1)
+                           Sort Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+                           Sort Method: quicksort  Memory: 3873kB
+                           Buffers: shared hit=11030 read=510530
+                           ->  Partial HashAggregate  (cost=667792.77..668216.49 rows=33898 width=78) (actual time=11930.001..11942.646 rows=22587.00 loops=1)
+                                 Group Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+                                 Batches: 1  Memory Usage: 11289kB
+                                 Buffers: shared hit=11030 read=510530
+                                 ->  Parallel Hash Join  (cost=5457.39..631882.93 rows=2393989 width=48) (actual time=86.859..7602.997 rows=5803360.00 loops=1)
+                                       Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=11030 read=510530
+                                       ->  Parallel Seq Scan on store_sales ss  (cost=0.00..589449.80 rows=7200180 width=10) (actual time=0.012..2953.794 rows=28800991.00 loops=1)
+                                             Buffers: shared hit=6918 read=510530
+                                       ->  Parallel Hash  (cost=5280.75..5280.75 rows=14131 width=42) (actual time=86.180..86.182 rows=22587.00 loops=1)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 2304kB
+                                             Buffers: shared hit=4112
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..5280.75 rows=14131 width=42) (actual time=0.065..78.941 rows=22587.00 loops=1)
+                                                   Filter: ((i_current_price > '0'::numeric) AND (round((((i_current_price - i_wholesale_cost) / NULLIF(i_current_price, '0'::numeric)) * '100'::numeric), 2) < '20'::numeric))
+                                                   Rows Removed by Filter: 79413
+                                                   Buffers: shared hit=4112
+ Planning:
+   Buffers: shared hit=214
+ Planning Time: 1.206 ms
+ JIT:
+   Functions: 24
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.670 ms (Deform 1.241 ms), Inlining 95.087 ms, Optimization 219.882 ms, Emission 154.020 ms, Total 471.658 ms
+ Execution Time: 12493.704 ms
+(41 rows)
+

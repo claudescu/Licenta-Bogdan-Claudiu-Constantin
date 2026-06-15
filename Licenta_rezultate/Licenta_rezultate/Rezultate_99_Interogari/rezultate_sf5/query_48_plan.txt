@@ -1,0 +1,66 @@
+                                                                                                                                                                                                                                                                                                                                                                            QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=445426.03..445426.04 rows=1 width=8) (actual time=2803.088..2844.053 rows=1.00 loops=1)
+   Buffers: shared hit=280387
+   ->  Gather  (cost=445425.81..445426.02 rows=2 width=8) (actual time=2801.975..2844.040 rows=2.00 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=280387
+         ->  Partial Aggregate  (cost=444425.81..444425.82 rows=1 width=8) (actual time=2782.103..2782.110 rows=1.00 loops=2)
+               Buffers: shared hit=280387
+               ->  Hash Join  (cost=439964.48..444425.77 rows=15 width=4) (actual time=2756.706..2782.003 rows=1380.50 loops=2)
+                     Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                     Buffers: shared hit=280387
+                     ->  Parallel Hash Join  (cost=439961.31..444422.39 rows=16 width=8) (actual time=2711.753..2736.836 rows=1382.00 loops=2)
+                           Hash Cond: (customer_address.ca_address_sk = store_sales.ss_addr_sk)
+                           Join Filter: ((((customer_address.ca_state)::text = ANY ('{CO,OH,TX}'::text[])) AND (store_sales.ss_net_profit >= '0'::numeric) AND (store_sales.ss_net_profit <= '2000'::numeric)) OR (((customer_address.ca_state)::text = ANY ('{OR,MN,KY}'::text[])) AND (store_sales.ss_net_profit >= '150'::numeric) AND (store_sales.ss_net_profit <= '3000'::numeric)) OR (((customer_address.ca_state)::text = ANY ('{VA,CA,MS}'::text[])) AND (store_sales.ss_net_profit >= '50'::numeric) AND (store_sales.ss_net_profit <= '25000'::numeric)))
+                           Rows Removed by Join Filter: 266
+                           Buffers: shared hit=280383
+                           ->  Parallel Seq Scan on customer_address  (cost=0.00..4383.94 rows=20455 width=7) (actual time=0.061..22.643 rows=19634.50 loops=2)
+                                 Filter: (((ca_country)::text = 'United States'::text) AND (((ca_state)::text = ANY ('{CO,OH,TX}'::text[])) OR ((ca_state)::text = ANY ('{OR,MN,KY}'::text[])) OR ((ca_state)::text = ANY ('{VA,CA,MS}'::text[]))))
+                                 Rows Removed by Filter: 49366
+                                 Buffers: shared hit=2459
+                           ->  Parallel Hash  (cost=439960.29..439960.29 rows=82 width=18) (actual time=2710.744..2710.749 rows=5965.50 loops=2)
+                                 Buckets: 16384 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 952kB
+                                 Buffers: shared hit=277924
+                                 ->  Parallel Hash Join  (cost=406533.89..439960.29 rows=82 width=18) (actual time=2482.221..2691.631 rows=5965.50 loops=2)
+                                       Hash Cond: (customer_demographics.cd_demo_sk = store_sales.ss_cdemo_sk)
+                                       Join Filter: ((((customer_demographics.cd_marital_status)::text = 'M'::text) AND ((customer_demographics.cd_education_status)::text = '4 yr Degree'::text) AND (store_sales.ss_sales_price >= 100.00) AND (store_sales.ss_sales_price <= 150.00)) OR (((customer_demographics.cd_marital_status)::text = 'D'::text) AND ((customer_demographics.cd_education_status)::text = '2 yr Degree'::text) AND (store_sales.ss_sales_price >= 50.00) AND (store_sales.ss_sales_price <= 100.00)) OR (((customer_demographics.cd_marital_status)::text = 'S'::text) AND ((customer_demographics.cd_education_status)::text = 'College'::text) AND (store_sales.ss_sales_price >= 150.00) AND (store_sales.ss_sales_price <= 200.00)))
+                                       Rows Removed by Join Filter: 12054
+                                       Buffers: shared hit=277924
+                                       ->  Parallel Seq Scan on customer_demographics  (cost=0.00..33230.32 rows=51679 width=16) (actual time=0.061..177.757 rows=82320.00 loops=2)
+                                             Filter: ((((cd_marital_status)::text = 'M'::text) AND ((cd_education_status)::text = '4 yr Degree'::text)) OR (((cd_marital_status)::text = 'D'::text) AND ((cd_education_status)::text = '2 yr Degree'::text)) OR (((cd_marital_status)::text = 'S'::text) AND ((cd_education_status)::text = 'College'::text)))
+                                             Rows Removed by Filter: 878080
+                                             Buffers: shared hit=17740
+                                       ->  Parallel Hash  (cost=406506.06..406506.06 rows=2226 width=28) (actual time=2482.068..2482.072 rows=213837.50 loops=2)
+                                             Buckets: 524288 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 34688kB
+                                             Buffers: shared hit=260184
+                                             ->  Parallel Hash Join  (cost=1963.78..406506.06 rows=2226 width=28) (actual time=5.444..2402.307 rows=213837.50 loops=2)
+                                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=260184
+                                                   ->  Parallel Seq Scan on store_sales  (cost=0.00..402760.96 rows=471535 width=32) (actual time=0.049..2303.418 rows=1079934.00 loops=2)
+                                                         Filter: ((((ss_sales_price >= 100.00) AND (ss_sales_price <= 150.00)) OR ((ss_sales_price >= 50.00) AND (ss_sales_price <= 100.00)) OR ((ss_sales_price >= 150.00) AND (ss_sales_price <= 200.00))) AND (((ss_net_profit >= '0'::numeric) AND (ss_net_profit <= '2000'::numeric)) OR ((ss_net_profit >= '150'::numeric) AND (ss_net_profit <= '3000'::numeric)) OR ((ss_net_profit >= '50'::numeric) AND (ss_net_profit <= '25000'::numeric))))
+                                                         Rows Removed by Filter: 6120092
+                                                         Buffers: shared hit=258760
+                                                   ->  Parallel Hash  (cost=1961.12..1961.12 rows=212 width=4) (actual time=5.376..5.377 rows=183.00 loops=2)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=212 width=4) (actual time=5.470..10.673 rows=366.00 loops=1)
+                                                               Filter: (d_year = 2000)
+                                                               Rows Removed by Filter: 72683
+                                                               Buffers: shared hit=1424
+                     ->  Hash  (cost=2.52..2.52 rows=52 width=4) (actual time=44.923..44.924 rows=52.00 loops=2)
+                           Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                           Buffers: shared hit=4
+                           ->  Seq Scan on store  (cost=0.00..2.52 rows=52 width=4) (actual time=44.868..44.880 rows=52.00 loops=2)
+                                 Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=276
+ Planning Time: 2.119 ms
+ JIT:
+   Functions: 100
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 9.002 ms (Deform 4.254 ms), Inlining 0.000 ms, Optimization 4.064 ms, Emission 85.778 ms, Total 98.843 ms
+ Execution Time: 2872.600 ms
+(62 rows)
+

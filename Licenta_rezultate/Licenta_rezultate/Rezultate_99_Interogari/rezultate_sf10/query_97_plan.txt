@@ -1,0 +1,72 @@
+                                                                                   QUERY PLAN                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1078422.45..1078422.46 rows=1 width=24) (actual time=6709.229..6749.098 rows=1.00 loops=1)
+   Buffers: shared hit=559844 read=334461
+   ->  Aggregate  (cost=1078422.45..1078422.46 rows=1 width=24) (actual time=6452.854..6492.721 rows=1.00 loops=1)
+         Buffers: shared hit=559844 read=334461
+         ->  Merge Full Join  (cost=1049850.74..1076862.13 rows=208042 width=8) (actual time=2980.043..6043.955 rows=8302475.00 loops=1)
+               Merge Cond: ((store_sales.ss_customer_sk = catalog_sales.cs_bill_customer_sk) AND (store_sales.ss_item_sk = catalog_sales.cs_item_sk))
+               Buffers: shared hit=559844 read=334461
+               ->  Group  (cost=622066.43..637815.42 rows=126260 width=8) (actual time=1560.921..2969.057 rows=5436244.00 loops=1)
+                     Group Key: store_sales.ss_customer_sk, store_sales.ss_item_sk
+                     Buffers: shared hit=518900
+                     ->  Gather Merge  (cost=622066.43..637184.12 rows=126260 width=8) (actual time=1560.885..2429.986 rows=5519337.00 loops=1)
+                           Workers Planned: 4
+                           Workers Launched: 4
+                           Buffers: shared hit=518900
+                           ->  Sort  (cost=621066.37..621145.28 rows=31565 width=8) (actual time=1507.128..1671.264 rows=1103867.40 loops=5)
+                                 Sort Key: store_sales.ss_customer_sk, store_sales.ss_item_sk
+                                 Sort Method: quicksort  Memory: 61643kB
+                                 Buffers: shared hit=518900
+                                 Worker 0:  Sort Method: quicksort  Memory: 59850kB
+                                 Worker 1:  Sort Method: quicksort  Memory: 58833kB
+                                 Worker 2:  Sort Method: quicksort  Memory: 48265kB
+                                 Worker 3:  Sort Method: quicksort  Memory: 48228kB
+                                 ->  Parallel Hash Join  (cost=2071.03..618707.51 rows=31565 width=8) (actual time=130.384..1141.534 rows=1103867.40 loops=5)
+                                       Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                       Buffers: shared hit=518872
+                                       ->  Parallel Seq Scan on store_sales  (cost=0.00..589449.80 rows=7200180 width=12) (actual time=0.033..385.413 rows=5760198.20 loops=5)
+                                             Buffers: shared hit=517448
+                                       ->  Parallel Hash  (cost=2068.55..2068.55 rows=198 width=4) (actual time=3.126..3.128 rows=73.20 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=198 width=4) (actual time=7.993..15.498 rows=366.00 loops=1)
+                                                   Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                   Rows Removed by Filter: 72683
+                                                   Buffers: shared hit=1424
+               ->  Group  (cost=427784.31..436005.45 rows=65909 width=8) (actual time=1419.093..2167.347 rows=2866834.00 loops=1)
+                     Group Key: catalog_sales.cs_bill_customer_sk, catalog_sales.cs_item_sk
+                     Buffers: shared hit=40944 read=334461
+                     ->  Gather Merge  (cost=427784.31..435675.90 rows=65909 width=8) (actual time=1419.056..1874.184 rows=2867350.00 loops=1)
+                           Workers Planned: 4
+                           Workers Launched: 3
+                           Buffers: shared hit=40944 read=334461
+                           ->  Sort  (cost=426784.25..426825.45 rows=16477 width=8) (actual time=1315.995..1421.467 rows=716837.50 loops=4)
+                                 Sort Key: catalog_sales.cs_bill_customer_sk, catalog_sales.cs_item_sk
+                                 Sort Method: quicksort  Memory: 59156kB
+                                 Buffers: shared hit=40944 read=334461
+                                 Worker 0:  Sort Method: quicksort  Memory: 38298kB
+                                 Worker 1:  Sort Method: quicksort  Memory: 37896kB
+                                 Worker 2:  Sort Method: quicksort  Memory: 38352kB
+                                 ->  Parallel Hash Join  (cost=2071.03..425630.19 rows=16477 width=8) (actual time=115.176..1113.461 rows=716837.50 loops=4)
+                                       Hash Cond: (catalog_sales.cs_sold_date_sk = date_dim_1.d_date_sk)
+                                       Buffers: shared hit=40923 read=334461
+                                       ->  Parallel Seq Scan on catalog_sales  (cost=0.00..409961.50 rows=3600150 width=12) (actual time=0.399..609.739 rows=3600315.25 loops=4)
+                                             Buffers: shared hit=39499 read=334461
+                                       ->  Parallel Hash  (cost=2068.55..2068.55 rows=198 width=4) (actual time=1.169..1.172 rows=91.50 loops=4)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim date_dim_1  (cost=0.00..2068.55 rows=198 width=4) (actual time=2.319..4.564 rows=366.00 loops=1)
+                                                   Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                   Rows Removed by Filter: 72683
+                                                   Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=103
+ Planning Time: 1.670 ms
+ JIT:
+   Functions: 120
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 8.196 ms (Deform 3.500 ms), Inlining 641.491 ms, Optimization 428.738 ms, Emission 275.437 ms, Total 1353.861 ms
+ Execution Time: 6784.295 ms
+(68 rows)
+

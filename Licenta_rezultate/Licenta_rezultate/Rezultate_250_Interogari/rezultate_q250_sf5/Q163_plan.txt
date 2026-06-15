@@ -1,0 +1,53 @@
+                                                                                    QUERY PLAN                                                                                    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=352558.16..352558.41 rows=100 width=94) (actual time=957.982..989.008 rows=100.00 loops=1)
+   Buffers: shared hit=261015
+   ->  Sort  (cost=352558.16..352603.02 rows=17944 width=94) (actual time=930.083..961.101 rows=100.00 loops=1)
+         Sort Key: (count(ss.ss_item_sk)) DESC
+         Sort Method: top-N heapsort  Memory: 46kB
+         Buffers: shared hit=261015
+         ->  Finalize GroupAggregate  (cost=341618.46..351872.35 rows=17944 width=94) (actual time=904.771..959.838 rows=5051.00 loops=1)
+               Group Key: i.i_product_name, i.i_category, i.i_brand, i.i_current_price, i.i_wholesale_cost
+               Buffers: shared hit=261012
+               ->  Gather Merge  (cost=341618.46..350212.53 rows=71776 width=94) (actual time=904.732..948.485 rows=25255.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=261012
+                     ->  Sort  (cost=340618.40..340663.26 rows=17944 width=94) (actual time=871.112..871.615 rows=5051.00 loops=5)
+                           Sort Key: i.i_product_name, i.i_category, i.i_brand, i.i_current_price, i.i_wholesale_cost
+                           Sort Method: quicksort  Memory: 967kB
+                           Buffers: shared hit=261012
+                           Worker 0:  Sort Method: quicksort  Memory: 967kB
+                           Worker 1:  Sort Method: quicksort  Memory: 967kB
+                           Worker 2:  Sort Method: quicksort  Memory: 967kB
+                           Worker 3:  Sort Method: quicksort  Memory: 967kB
+                           ->  Partial HashAggregate  (cost=339126.25..339350.55 rows=17944 width=94) (actual time=864.308..867.010 rows=5051.00 loops=5)
+                                 Group Key: i.i_product_name, i.i_category, i.i_brand, i.i_current_price, i.i_wholesale_cost
+                                 Batches: 1  Memory Usage: 3609kB
+                                 Buffers: shared hit=260952
+                                 Worker 0:  Batches: 1  Memory Usage: 3609kB
+                                 Worker 1:  Batches: 1  Memory Usage: 3609kB
+                                 Worker 2:  Batches: 1  Memory Usage: 3609kB
+                                 Worker 3:  Batches: 1  Memory Usage: 3609kB
+                                 ->  Parallel Hash Join  (cost=2879.89..318180.93 rows=1196875 width=64) (actual time=25.700..713.324 rows=180252.40 loops=5)
+                                       Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=260952
+                                       ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=10) (actual time=0.024..228.753 rows=2880010.40 loops=5)
+                                             Buffers: shared hit=258760
+                                       ->  Parallel Hash  (cost=2747.88..2747.88 rows=10561 width=58) (actual time=6.024..6.026 rows=1010.20 loops=5)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 736kB
+                                             Buffers: shared hit=2192
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..2747.88 rows=10561 width=58) (actual time=0.057..27.997 rows=5051.00 loops=1)
+                                                   Filter: ((i_wholesale_cost > '0'::numeric) AND (i_current_price < (i_wholesale_cost * 1.1)))
+                                                   Rows Removed by Filter: 48949
+                                                   Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=227
+ Planning Time: 1.528 ms
+ JIT:
+   Functions: 104
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 12.576 ms (Deform 6.703 ms), Inlining 0.000 ms, Optimization 5.773 ms, Emission 119.660 ms, Total 138.009 ms
+ Execution Time: 1016.673 ms
+(49 rows)
+

@@ -1,0 +1,59 @@
+                                                                                                                           QUERY PLAN                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2125761.84..2125762.09 rows=100 width=203) (actual time=26880.187..26885.820 rows=100.00 loops=1)
+   Buffers: shared hit=6240 read=1867016
+   ->  Sort  (cost=2125761.84..2125783.93 rows=8836 width=203) (actual time=26463.117..26468.741 rows=100.00 loops=1)
+         Sort Key: item.i_category NULLS FIRST, item.i_class NULLS FIRST, item.i_item_id NULLS FIRST, item.i_item_desc NULLS FIRST, ((((sum(catalog_sales.cs_ext_sales_price)) * 100.0000) / sum((sum(catalog_sales.cs_ext_sales_price))) OVER w1)) NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 53kB
+         Buffers: shared hit=6240 read=1867016
+         ->  WindowAgg  (cost=2125226.86..2125424.13 rows=8836 width=203) (actual time=26453.494..26465.760 rows=9264.00 loops=1)
+               Window: w1 AS (PARTITION BY item.i_class)
+               Storage: Memory  Maximum Storage: 57kB
+               Buffers: shared hit=6240 read=1867016
+               ->  Sort  (cost=2125225.32..2125247.41 rows=8836 width=171) (actual time=26453.306..26459.446 rows=9264.00 loops=1)
+                     Sort Key: item.i_class
+                     Sort Method: quicksort  Memory: 1921kB
+                     Buffers: shared hit=6240 read=1867016
+                     ->  GroupAggregate  (cost=2123396.12..2124646.16 rows=8836 width=171) (actual time=26357.249..26455.209 rows=9264.00 loops=1)
+                           Group Key: item.i_category, item.i_class, item.i_item_id, item.i_item_desc, item.i_current_price
+                           Buffers: shared hit=6240 read=1867016
+                           ->  Gather Merge  (cost=2123396.12..2124403.17 rows=8836 width=145) (actual time=26357.173..26396.391 rows=202864.00 loops=1)
+                                 Workers Planned: 1
+                                 Workers Launched: 0
+                                 Buffers: shared hit=6240 read=1867016
+                                 ->  Sort  (cost=2122396.11..2122409.11 rows=5198 width=145) (actual time=26356.278..26374.910 rows=202864.00 loops=1)
+                                       Sort Key: item.i_category NULLS FIRST, item.i_class NULLS FIRST, item.i_item_id NULLS FIRST, item.i_item_desc NULLS FIRST, item.i_current_price
+                                       Sort Method: quicksort  Memory: 39389kB
+                                       Buffers: shared hit=6240 read=1867016
+                                       ->  Parallel Hash Join  (cost=2118994.03..2122075.30 rows=5198 width=145) (actual time=25898.607..25980.220 rows=202864.00 loops=1)
+                                             Hash Cond: (item.i_item_sk = catalog_sales.cs_item_sk)
+                                             Buffers: shared hit=6240 read=1867016
+                                             ->  Parallel Seq Scan on item  (cost=0.00..3013.47 rows=10961 width=143) (actual time=0.129..22.619 rows=18471.00 loops=1)
+                                                   Filter: ((i_category)::text = ANY ('{Sports,Books,Home}'::text[]))
+                                                   Rows Removed by Filter: 43529
+                                                   Buffers: shared hit=2512
+                                             ->  Parallel Hash  (cost=2118902.16..2118902.16 rows=7350 width=10) (actual time=25897.077..25897.091 rows=678493.00 loops=1)
+                                                   Buckets: 1048576 (originally 32768)  Batches: 1 (originally 1)  Memory Usage: 47936kB
+                                                   Buffers: shared hit=3728 read=1867016
+                                                   ->  Parallel Hash Join  (cost=2068.78..2118902.16 rows=7350 width=10) (actual time=5290.269..25712.307 rows=678493.00 loops=1)
+                                                         Hash Cond: (catalog_sales.cs_sold_date_sk = date_dim.d_date_sk)
+                                                         Buffers: shared hit=3728 read=1867016
+                                                         ->  Parallel Seq Scan on catalog_sales  (cost=0.00..2049297.66 rows=17997766 width=14) (actual time=9.766..17796.292 rows=71997669.00 loops=1)
+                                                               Buffers: shared hit=2304 read=1867016
+                                                         ->  Parallel Hash  (cost=2068.55..2068.55 rows=18 width=4) (actual time=8.363..8.369 rows=31.00 loops=1)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                               Buffers: shared hit=1424
+                                                               ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=18 width=4) (actual time=4.255..8.348 rows=31.00 loops=1)
+                                                                     Filter: ((d_date >= '1999-02-22'::date) AND (d_date <= '1999-03-24'::date))
+                                                                     Rows Removed by Filter: 73018
+                                                                     Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=321
+ Planning Time: 1.870 ms
+ JIT:
+   Functions: 32
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.528 ms (Deform 1.283 ms), Inlining 101.142 ms, Optimization 188.421 ms, Emission 127.720 ms, Total 419.812 ms
+ Execution Time: 26923.185 ms
+(55 rows)
+

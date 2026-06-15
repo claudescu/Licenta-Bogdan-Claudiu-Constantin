@@ -1,0 +1,50 @@
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=560160.66..566067.32 rows=9600 width=97) (actual time=11332.401..11333.474 rows=252.00 loops=1)
+   Sort Key: d.d_year, d.d_qoy, (sum(cs.cs_net_paid)) DESC
+   Presorted Key: d.d_year, d.d_qoy
+   Full-sort Groups: 7  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+   Buffers: shared hit=5750 read=369639
+   ->  Finalize GroupAggregate  (cost=560153.44..565759.25 rows=9600 width=97) (actual time=11332.297..11333.216 rows=252.00 loops=1)
+         Group Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+         Buffers: shared hit=5747 read=369639
+         ->  Gather Merge  (cost=560153.44..564751.25 rows=38400 width=97) (actual time=11332.266..11332.994 rows=252.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=5747 read=369639
+               ->  Sort  (cost=559153.38..559177.38 rows=9600 width=97) (actual time=11331.661..11331.683 rows=252.00 loops=1)
+                     Sort Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+                     Sort Method: quicksort  Memory: 71kB
+                     Buffers: shared hit=5747 read=369639
+                     ->  Partial HashAggregate  (cost=558374.40..558518.40 rows=9600 width=97) (actual time=11331.114..11331.411 rows=252.00 loops=1)
+                           Group Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+                           Batches: 1  Memory Usage: 569kB
+                           Buffers: shared hit=5747 read=369639
+                           ->  Hash Join  (cost=2393.36..496002.31 rows=3564119 width=37) (actual time=473.785..7448.884 rows=14293474.00 loops=1)
+                                 Hash Cond: (cs.cs_call_center_sk = cc.cc_call_center_sk)
+                                 Buffers: shared hit=5747 read=369639
+                                 ->  Parallel Hash Join  (cost=2390.82..446925.06 rows=3582270 width=24) (actual time=27.951..5151.752 rows=14329227.00 loops=1)
+                                       Hash Cond: (cs.cs_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=5745 read=369639
+                                       ->  Parallel Seq Scan on catalog_sales cs  (cost=0.00..409961.50 rows=3600150 width=20) (actual time=0.920..1794.669 rows=14401261.00 loops=1)
+                                             Buffers: shared hit=4321 read=369639
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=12) (actual time=25.362..25.364 rows=73049.00 loops=1)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 4480kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=12) (actual time=0.041..13.172 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+                                 ->  Hash  (cost=2.24..2.24 rows=24 width=21) (actual time=445.810..445.811 rows=24.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on call_center cc  (cost=0.00..2.24 rows=24 width=21) (actual time=445.763..445.778 rows=24.00 loops=1)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=160
+ Planning Time: 1.140 ms
+ JIT:
+   Functions: 29
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.189 ms (Deform 1.145 ms), Inlining 72.291 ms, Optimization 219.291 ms, Emission 154.264 ms, Total 448.035 ms
+ Execution Time: 11358.026 ms
+(46 rows)
+

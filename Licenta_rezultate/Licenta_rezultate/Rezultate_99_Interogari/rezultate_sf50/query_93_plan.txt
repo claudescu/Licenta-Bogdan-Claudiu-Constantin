@@ -1,0 +1,52 @@
+                                                                                                                                                          QUERY PLAN                                                                                                                                                          
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3510341.93..3510342.18 rows=100 width=36) (actual time=281321.765..281326.942 rows=100.00 loops=1)
+   Buffers: shared hit=972927 read=1851921
+   ->  Sort  (cost=3510341.93..3510343.75 rows=729 width=36) (actual time=280693.335..280697.984 rows=100.00 loops=1)
+         Sort Key: (sum(CASE WHEN (store_returns.sr_return_quantity IS NOT NULL) THEN (((store_sales.ss_quantity - store_returns.sr_return_quantity))::numeric * store_sales.ss_sales_price) ELSE ((store_sales.ss_quantity)::numeric * store_sales.ss_sales_price) END)) NULLS FIRST, store_sales.ss_customer_sk NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 31kB
+         Buffers: shared hit=972927 read=1851921
+         ->  Finalize GroupAggregate  (cost=3510206.87..3510314.07 rows=729 width=36) (actual time=280269.674..280669.700 rows=271577.00 loops=1)
+               Group Key: store_sales.ss_customer_sk
+               Buffers: shared hit=972924 read=1851921
+               ->  Gather Merge  (cost=3510206.87..3510299.49 rows=728 width=36) (actual time=280269.649..280544.965 rows=271577.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 0
+                     Buffers: shared hit=972924 read=1851921
+                     ->  Partial GroupAggregate  (cost=3509206.81..3509212.72 rows=182 width=36) (actual time=280268.176..280518.077 rows=271577.00 loops=1)
+                           Group Key: store_sales.ss_customer_sk
+                           Buffers: shared hit=972924 read=1851921
+                           ->  Sort  (cost=3509206.81..3509207.26 rows=182 width=18) (actual time=280261.184..280328.240 rows=355599.00 loops=1)
+                                 Sort Key: store_sales.ss_customer_sk NULLS FIRST
+                                 Sort Method: quicksort  Memory: 25795kB
+                                 Buffers: shared hit=972924 read=1851921
+                                 ->  Parallel Hash Join  (cost=291845.18..3509199.98 rows=182 width=18) (actual time=46625.688..280035.945 rows=355599.00 loops=1)
+                                       Hash Cond: ((store_sales.ss_item_sk = store_returns.sr_item_sk) AND (store_sales.ss_ticket_number = store_returns.sr_ticket_number))
+                                       Buffers: shared hit=972924 read=1851921
+                                       ->  Parallel Seq Scan on store_sales  (cost=0.00..2947346.48 rows=36001048 width=22) (actual time=38.477..177905.224 rows=144004764.00 loops=1)
+                                             Buffers: shared hit=972923 read=1611777
+                                       ->  Parallel Hash  (cost=290512.20..290512.20 rows=88865 width=12) (actual time=46143.672..46143.679 rows=355599.00 loops=1)
+                                             Buckets: 524288  Batches: 1  Memory Usage: 20768kB
+                                             Buffers: shared hit=1 read=240144
+                                             ->  Hash Join  (cost=1.50..290512.20 rows=88865 width=12) (actual time=33.844..45876.294 rows=355599.00 loops=1)
+                                                   Hash Cond: (store_returns.sr_reason_sk = reason.r_reason_sk)
+                                                   Buffers: shared hit=1 read=240144
+                                                   ->  Parallel Seq Scan on store_returns  (cost=0.00..276128.04 rows=3598404 width=16) (actual time=32.283..43231.287 rows=14396192.00 loops=1)
+                                                         Buffers: shared read=240144
+                                                   ->  Hash  (cost=1.49..1.49 rows=1 width=4) (actual time=1.490..1.492 rows=1.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                         Buffers: shared hit=1
+                                                         ->  Seq Scan on reason  (cost=0.00..1.49 rows=1 width=4) (actual time=1.471..1.474 rows=1.00 loops=1)
+                                                               Filter: ((r_reason_desc)::text = 'reason 28'::text)
+                                                               Rows Removed by Filter: 38
+                                                               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=144 read=3
+ Planning Time: 73.050 ms
+ JIT:
+   Functions: 30
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.989 ms (Deform 1.448 ms), Inlining 211.335 ms, Optimization 266.447 ms, Emission 151.029 ms, Total 631.799 ms
+ Execution Time: 281968.946 ms
+(48 rows)
+

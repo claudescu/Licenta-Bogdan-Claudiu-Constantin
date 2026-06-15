@@ -1,0 +1,47 @@
+                                                                                   QUERY PLAN                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2120905.38..2120905.48 rows=40 width=75) (actual time=39658.771..39658.926 rows=55.00 loops=1)
+   Buffers: shared hit=64244, temp read=63589 written=63602
+   ->  Sort  (cost=2120905.38..2120905.48 rows=40 width=75) (actual time=39320.068..39320.218 rows=55.00 loops=1)
+         Sort Key: (sum(inv.inv_quantity_on_hand)) DESC
+         Sort Method: quicksort  Memory: 31kB
+         Buffers: shared hit=64244, temp read=63589 written=63602
+         ->  GroupAggregate  (cost=538270.58..2120904.31 rows=40 width=75) (actual time=31761.062..39320.028 rows=55.00 loops=1)
+               Group Key: w.w_warehouse_name, w.w_state, i.i_category
+               Buffers: shared hit=64241, temp read=63589 written=63602
+               ->  Gather Merge  (cost=538270.58..1944709.34 rows=11746298 width=35) (actual time=31620.303..37626.792 rows=11745000.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 0
+                     Buffers: shared hit=64241, temp read=63589 written=63602
+                     ->  Sort  (cost=537270.52..544611.96 rows=2936574 width=35) (actual time=31619.770..36730.550 rows=11745000.00 loops=1)
+                           Sort Key: w.w_warehouse_name, w.w_state, i.i_category, inv.inv_item_sk
+                           Sort Method: external merge  Disk: 508712kB
+                           Buffers: shared hit=64241, temp read=63589 written=63602
+                           ->  Hash Join  (cost=1126.11..174767.64 rows=2936574 width=35) (actual time=9.725..4525.895 rows=11745000.00 loops=1)
+                                 Hash Cond: (inv.inv_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=64241
+                                 ->  Hash Join  (cost=1.11..133264.75 rows=2936574 width=29) (actual time=0.100..2627.667 rows=11745000.00 loops=1)
+                                       Hash Cond: (inv.inv_warehouse_sk = w.w_warehouse_sk)
+                                       Buffers: shared hit=63521
+                                       ->  Parallel Seq Scan on inventory inv  (cost=0.00..92885.74 rows=2936574 width=12) (actual time=0.030..708.823 rows=11745000.00 loops=1)
+                                             Buffers: shared hit=63520
+                                       ->  Hash  (cost=1.05..1.05 rows=5 width=25) (actual time=0.055..0.056 rows=5.00 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             Buffers: shared hit=1
+                                             ->  Seq Scan on warehouse w  (cost=0.00..1.05 rows=5 width=25) (actual time=0.044..0.046 rows=5.00 loops=1)
+                                                   Buffers: shared hit=1
+                                 ->  Hash  (cost=900.00..900.00 rows=18000 width=10) (actual time=9.534..9.535 rows=18000.00 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1037kB
+                                       Buffers: shared hit=720
+                                       ->  Seq Scan on item i  (cost=0.00..900.00 rows=18000 width=10) (actual time=0.017..7.041 rows=18000.00 loops=1)
+                                             Buffers: shared hit=720
+ Planning:
+   Buffers: shared hit=140
+ Planning Time: 0.932 ms
+ JIT:
+   Functions: 23
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 1.660 ms (Deform 0.784 ms), Inlining 94.414 ms, Optimization 154.178 ms, Emission 90.209 ms, Total 340.461 ms
+ Execution Time: 39739.314 ms
+(43 rows)
+

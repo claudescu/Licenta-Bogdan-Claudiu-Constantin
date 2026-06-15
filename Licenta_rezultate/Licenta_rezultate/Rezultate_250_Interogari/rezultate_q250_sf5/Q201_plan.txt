@@ -1,0 +1,75 @@
+                                                                                                 QUERY PLAN                                                                                                  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=466710.18..466710.43 rows=100 width=89) (actual time=3607.283..3640.404 rows=100.00 loops=1)
+   Buffers: shared hit=268619
+   ->  Sort  (cost=466710.18..466711.46 rows=510 width=89) (actual time=3569.191..3602.304 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 40kB
+         Buffers: shared hit=268619
+         ->  Finalize GroupAggregate  (cost=466397.98..466690.69 rows=510 width=89) (actual time=3563.721..3601.671 rows=1139.00 loops=1)
+               Group Key: ca.ca_state, p.p_purpose, i.i_category
+               Buffers: shared hit=268616
+               ->  Gather Merge  (cost=466397.98..466642.24 rows=2040 width=89) (actual time=3563.686..3598.604 rows=5613.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=268616
+                     ->  Sort  (cost=465397.93..465399.20 rows=510 width=89) (actual time=3531.238..3531.402 rows=1122.60 loops=5)
+                           Sort Key: ca.ca_state, p.p_purpose, i.i_category
+                           Sort Method: quicksort  Memory: 243kB
+                           Buffers: shared hit=268616
+                           Worker 0:  Sort Method: quicksort  Memory: 243kB
+                           Worker 1:  Sort Method: quicksort  Memory: 243kB
+                           Worker 2:  Sort Method: quicksort  Memory: 243kB
+                           Worker 3:  Sort Method: quicksort  Memory: 243kB
+                           ->  Partial HashAggregate  (cost=465367.34..465374.99 rows=510 width=89) (actual time=3529.397..3530.191 rows=1122.60 loops=5)
+                                 Group Key: ca.ca_state, p.p_purpose, i.i_category
+                                 Batches: 1  Memory Usage: 1201kB
+                                 Buffers: shared hit=268584
+                                 Worker 0:  Batches: 1  Memory Usage: 1201kB
+                                 Worker 1:  Batches: 1  Memory Usage: 1201kB
+                                 Worker 2:  Batches: 1  Memory Usage: 1201kB
+                                 Worker 3:  Batches: 1  Memory Usage: 1201kB
+                                 ->  Parallel Hash Join  (cost=16050.52..416072.97 rows=3286291 width=26) (actual time=145.622..2652.685 rows=2685538.20 loops=5)
+                                       Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=268584
+                                       ->  Hash Join  (cost=13143.81..381511.37 rows=3286291 width=24) (actual time=101.547..2009.395 rows=2685538.20 loops=5)
+                                             Hash Cond: (ss.ss_promo_sk = p.p_promo_sk)
+                                             Buffers: shared hit=266392
+                                             ->  Parallel Hash Join  (cost=13127.08..335726.55 rows=3441383 width=20) (actual time=101.219..1586.710 rows=2750401.60 loops=5)
+                                                   Hash Cond: (ss.ss_customer_sk = c.c_customer_sk)
+                                                   Buffers: shared hit=266352
+                                                   ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=21) (actual time=0.019..272.488 rows=2880010.40 loops=5)
+                                                         Buffers: shared hit=258760
+                                                   ->  Parallel Hash  (cost=11684.37..11684.37 rows=115417 width=7) (actual time=100.309..100.402 rows=55400.00 loops=5)
+                                                         Buckets: 524288  Batches: 1  Memory Usage: 15040kB
+                                                         Buffers: shared hit=7592
+                                                         ->  Parallel Hash Join  (cost=4282.46..11684.37 rows=115417 width=7) (actual time=29.336..73.211 rows=55400.00 loops=5)
+                                                               Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                                               Buffers: shared hit=7592
+                                                               ->  Parallel Seq Scan on customer c  (cost=0.00..6290.17 rows=115417 width=8) (actual time=0.017..9.097 rows=55400.00 loops=5)
+                                                                     Buffers: shared hit=5136
+                                                               ->  Parallel Hash  (cost=3267.76..3267.76 rows=81176 width=7) (actual time=28.610..28.612 rows=27600.00 loops=5)
+                                                                     Buckets: 262144  Batches: 1  Memory Usage: 7520kB
+                                                                     Buffers: shared hit=2456
+                                                                     ->  Parallel Seq Scan on customer_address ca  (cost=0.00..3267.76 rows=81176 width=7) (actual time=0.107..12.073 rows=27600.00 loops=5)
+                                                                           Buffers: shared hit=2456
+                                             ->  Hash  (cost=11.88..11.88 rows=388 width=12) (actual time=0.306..0.307 rows=388.00 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 25kB
+                                                   Buffers: shared hit=40
+                                                   ->  Seq Scan on promotion p  (cost=0.00..11.88 rows=388 width=12) (actual time=0.059..0.234 rows=388.00 loops=5)
+                                                         Buffers: shared hit=40
+                                       ->  Parallel Hash  (cost=2509.65..2509.65 rows=31765 width=10) (actual time=43.796..43.797 rows=10800.00 loops=5)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 3136kB
+                                             Buffers: shared hit=2192
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..2509.65 rows=31765 width=10) (actual time=28.235..33.326 rows=10800.00 loops=5)
+                                                   Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=248
+ Planning Time: 1.569 ms
+ JIT:
+   Functions: 219
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 16.217 ms (Deform 8.902 ms), Inlining 0.000 ms, Optimization 7.641 ms, Emission 172.161 ms, Total 196.020 ms
+ Execution Time: 3670.026 ms
+(71 rows)
+

@@ -1,0 +1,115 @@
+                                                                                                                                                                                  QUERY PLAN                                                                                                                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4550913.69..4642573.59 rows=1 width=96) (actual time=298076.320..611370.318 rows=100.00 loops=1)
+   Buffers: shared hit=1032456 read=2525630, temp read=12990630 written=551650
+   CTE year_total
+     ->  Append  (cost=3139405.69..4467587.48 rows=1666479 width=98) (actual time=123258.618..293504.273 rows=2295835.00 loops=1)
+           Buffers: shared hit=1032456 read=2525630, temp read=483765 written=535691
+           ->  GroupAggregate  (cost=3139405.69..3328706.59 rows=1307917 width=98) (actual time=123258.615..160297.270 rows=1464920.00 loops=1)
+                 Group Key: customer.c_customer_id, customer.c_first_name, customer.c_last_name, date_dim.d_year
+                 Buffers: shared hit=1016812 read=1586162, temp read=345932 written=346003
+                 ->  Gather Merge  (cost=3139405.69..3296008.66 rows=1307917 width=40) (actual time=123258.443..150337.419 rows=53558019.00 loops=1)
+                       Workers Planned: 4
+                       Workers Launched: 0
+                       Buffers: shared hit=1016812 read=1586162, temp read=345932 written=346003
+                       ->  Sort  (cost=3138405.64..3139223.08 rows=326979 width=40) (actual time=123257.304..146130.964 rows=53558019.00 loops=1)
+                             Sort Key: customer.c_customer_id, customer.c_first_name, customer.c_last_name, date_dim.d_year
+                             Sort Method: external merge  Disk: 2767456kB
+                             Buffers: shared hit=1016812 read=1586162, temp read=345932 written=346003
+                             ->  Parallel Hash Join  (cost=21750.16..3108456.26 rows=326979 width=40) (actual time=642.097..53784.664 rows=53558019.00 loops=1)
+                                   Hash Cond: (store_sales.ss_customer_sk = customer.c_customer_sk)
+                                   Buffers: shared hit=1016812 read=1586162
+                                   ->  Parallel Hash Join  (cost=1966.47..3086332.29 rows=342806 width=14) (actual time=134.737..39929.287 rows=54848933.00 loops=1)
+                                         Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                         Buffers: shared hit=1002589 read=1586161
+                                         ->  Parallel Seq Scan on store_sales  (cost=0.00..2947346.48 rows=36001048 width=14) (actual time=123.927..16360.513 rows=144004764.00 loops=1)
+                                               Buffers: shared hit=1001165 read=1586161
+                                         ->  Parallel Hash  (cost=1961.12..1961.12 rows=428 width=8) (actual time=10.723..10.789 rows=730.00 loops=1)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                               Buffers: shared hit=1424
+                                               ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=428 width=8) (actual time=5.190..10.608 rows=730.00 loops=1)
+                                                     Filter: (d_year = ANY ('{2001,2002}'::integer[]))
+                                                     Rows Removed by Filter: 72319
+                                                     Buffers: shared hit=1424
+                                   ->  Parallel Hash  (cost=16694.97..16694.97 rows=247097 width=34) (actual time=497.868..498.072 rows=766000.00 loops=1)
+                                         Buckets: 1048576  Batches: 1  Memory Usage: 61184kB
+                                         Buffers: shared hit=14223 read=1
+                                         ->  Parallel Seq Scan on customer  (cost=0.00..16694.97 rows=247097 width=34) (actual time=0.058..194.555 rows=766000.00 loops=1)
+                                               Buffers: shared hit=14223 read=1
+           ->  HashAggregate  (cost=1126066.47..1130548.49 rows=358562 width=98) (actual time=130049.976..133021.572 rows=830915.00 loops=1)
+                 Group Key: customer_1.c_customer_id, customer_1.c_first_name, customer_1.c_last_name, date_dim_1.d_year
+                 Batches: 5  Memory Usage: 131129kB  Disk Usage: 555792kB
+                 Buffers: shared hit=15644 read=939468, temp read=137833 written=189688
+                 ->  Gather  (cost=1067817.49..1121584.44 rows=358562 width=40) (actual time=119925.883..124997.191 rows=14359688.00 loops=1)
+                       Workers Planned: 3
+                       Workers Launched: 0
+                       Buffers: shared hit=15644 read=939468, temp read=68451 written=68464
+                       ->  Parallel Hash Join  (cost=1066817.49..1084728.24 rows=115665 width=40) (actual time=119925.079..123777.617 rows=14359688.00 loops=1)
+                             Hash Cond: (customer_1.c_customer_sk = web_sales.ws_bill_customer_sk)
+                             Buffers: shared hit=15644 read=939468, temp read=68451 written=68464
+                             ->  Parallel Seq Scan on customer customer_1  (cost=0.00..16694.97 rows=247097 width=34) (actual time=9.996..350.585 rows=766000.00 loops=1)
+                                   Buffers: shared hit=14220 read=4
+                             ->  Parallel Hash  (cost=1065696.71..1065696.71 rows=89662 width=14) (actual time=119247.198..119247.537 rows=14361444.00 loops=1)
+                                   Buckets: 4194304 (originally 524288)  Batches: 8 (originally 1)  Memory Usage: 117728kB
+                                   Buffers: shared hit=1424 read=939464, temp written=55364
+                                   ->  Parallel Hash Join  (cost=1966.47..1065696.71 rows=89662 width=14) (actual time=40.554..112075.001 rows=14361444.00 loops=1)
+                                         Hash Cond: (web_sales.ws_sold_date_sk = date_dim_1.d_date_sk)
+                                         Buffers: shared hit=1424 read=939464
+                                         ->  Parallel Seq Scan on web_sales  (cost=0.00..1029456.08 rows=8999208 width=14) (actual time=33.694..100127.642 rows=35996850.00 loops=1)
+                                               Buffers: shared read=939464
+                                         ->  Parallel Hash  (cost=1961.12..1961.12 rows=428 width=8) (actual time=6.797..6.968 rows=730.00 loops=1)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                               Buffers: shared hit=1424
+                                               ->  Parallel Seq Scan on date_dim date_dim_1  (cost=0.00..1961.12 rows=428 width=8) (actual time=3.395..6.861 rows=730.00 loops=1)
+                                                     Filter: (d_year = ANY ('{2001,2002}'::integer[]))
+                                                     Rows Removed by Filter: 72319
+                                                     Buffers: shared hit=1424
+   ->  Nested Loop  (cost=83326.21..174986.11 rows=1 width=96) (actual time=296977.541..610077.566 rows=100.00 loops=1)
+         Join Filter: (((t_s_secyear.customer_id)::text = (t_w_firstyear.customer_id)::text) AND (CASE WHEN (t_w_firstyear.year_total > '0'::numeric) THEN (t_w_secyear.year_total / t_w_firstyear.year_total) ELSE NULL::numeric END > CASE WHEN (t_s_firstyear.year_total > '0'::numeric) THEN (t_s_secyear.year_total / t_s_firstyear.year_total) ELSE NULL::numeric END))
+         Rows Removed by Join Filter: 156799375
+         Buffers: shared hit=1032456 read=2525630, temp read=12990630 written=551650
+         ->  Nested Loop  (cost=83326.21..129157.59 rows=1 width=256) (actual time=296633.246..465328.806 rows=379.00 loops=1)
+               Join Filter: ((t_s_firstyear.customer_id)::text = (t_s_secyear.customer_id)::text)
+               Rows Removed by Join Filter: 295843112
+               Buffers: shared hit=1032456 read=2525630, temp read=6947240 written=551650
+               ->  Merge Join  (cost=83326.21..83326.72 rows=9 width=192) (actual time=296633.205..296640.870 rows=405.00 loops=1)
+                     Merge Cond: ((t_s_secyear.customer_id)::text = (t_w_secyear.customer_id)::text)
+                     Buffers: shared hit=1032456 read=2525630, temp read=499724 written=551650
+                     ->  Sort  (cost=41663.11..41663.21 rows=42 width=128) (actual time=294828.760..294829.786 rows=758.00 loops=1)
+                           Sort Key: t_s_secyear.customer_id NULLS FIRST
+                           Sort Method: quicksort  Memory: 60952kB
+                           Buffers: shared hit=1032456 read=2525630, temp read=483765 written=551649
+                           ->  CTE Scan on year_total t_s_secyear  (cost=0.00..41661.98 rows=42 width=128) (actual time=123258.649..294558.390 rows=732636.00 loops=1)
+                                 Filter: ((sale_type = 's'::text) AND (year_ = 2002))
+                                 Rows Removed by Filter: 1563199
+                                 Storage: Disk  Maximum Storage: 127666kB
+                                 Buffers: shared hit=1032456 read=2525630, temp read=483765 written=551649
+                     ->  Sort  (cost=41663.11..41663.21 rows=42 width=64) (actual time=1804.322..1806.178 rows=424.00 loops=1)
+                           Sort Key: t_w_secyear.customer_id NULLS FIRST
+                           Sort Method: quicksort  Memory: 31678kB
+                           Buffers: temp read=15959 written=1
+                           ->  CTE Scan on year_total t_w_secyear  (cost=0.00..41661.98 rows=42 width=64) (actual time=1201.335..1299.319 rows=416236.00 loops=1)
+                                 Filter: ((sale_type = 'w'::text) AND (year_ = 2002))
+                                 Rows Removed by Filter: 1879599
+                                 Storage: Disk  Maximum Storage: 127666kB
+                                 Buffers: temp read=15959 written=1
+               ->  CTE Scan on year_total t_s_firstyear  (cost=0.00..45828.17 rows=14 width=64) (actual time=0.003..376.642 rows=730477.76 loops=405)
+                     Filter: ((year_total > '0'::numeric) AND (sale_type = 's'::text) AND (year_ = 2001))
+                     Rows Removed by Filter: 1559692
+                     Storage: Disk  Maximum Storage: 127666kB
+                     Buffers: temp read=6447516
+         ->  CTE Scan on year_total t_w_firstyear  (cost=0.00..45828.17 rows=14 width=64) (actual time=217.318..358.812 rows=413718.93 loops=379)
+               Filter: ((year_total > '0'::numeric) AND (sale_type = 'w'::text) AND (year_ = 2001))
+               Rows Removed by Filter: 1880191
+               Storage: Disk  Maximum Storage: 127666kB
+               Buffers: temp read=6043390
+ Planning:
+   Buffers: shared hit=294 read=20
+ Planning Time: 67.170 ms
+ JIT:
+   Functions: 83
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 31.157 ms (Deform 6.215 ms), Inlining 190.644 ms, Optimization 651.494 ms, Emission 367.645 ms, Total 1240.940 ms
+ Execution Time: 611677.131 ms
+(111 rows)
+

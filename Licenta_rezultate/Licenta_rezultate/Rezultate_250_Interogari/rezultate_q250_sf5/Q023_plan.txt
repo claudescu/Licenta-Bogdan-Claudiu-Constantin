@@ -1,0 +1,44 @@
+                                                                                 QUERY PLAN                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=531347.33..531347.58 rows=100 width=130) (actual time=4655.763..4659.856 rows=100.00 loops=1)
+   Buffers: shared hit=258763 read=5136, temp read=1042 written=2156
+   ->  Sort  (cost=531347.33..532039.83 rows=277000 width=130) (actual time=4181.198..4185.283 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=258763 read=5136, temp read=1042 written=2156
+         ->  Finalize HashAggregate  (cost=516605.59..520760.59 rows=277000 width=130) (actual time=3784.460..4101.979 rows=273443.00 loops=1)
+               Group Key: c.c_customer_id, c.c_first_name, c.c_last_name, c.c_email_address
+               Batches: 5  Memory Usage: 143417kB  Disk Usage: 11088kB
+               Buffers: shared hit=258760 read=5136, temp read=1042 written=2156
+               ->  Gather  (cost=382953.09..497215.59 rows=1108000 width=130) (actual time=2742.187..2955.954 rows=803333.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=258760 read=5136
+                     ->  Partial HashAggregate  (cost=381953.09..385415.59 rows=277000 width=130) (actual time=2707.409..2885.214 rows=160666.60 loops=5)
+                           Group Key: c.c_customer_id, c.c_first_name, c.c_last_name, c.c_email_address
+                           Batches: 1  Memory Usage: 77849kB
+                           Buffers: shared hit=258760 read=5136
+                           Worker 0:  Batches: 1  Memory Usage: 77849kB
+                           Worker 1:  Batches: 1  Memory Usage: 81945kB
+                           Worker 2:  Batches: 1  Memory Usage: 81945kB
+                           Worker 3:  Batches: 1  Memory Usage: 77849kB
+                           ->  Parallel Hash Join  (cost=7732.88..330332.35 rows=3441383 width=64) (actual time=700.254..1750.251 rows=2750401.60 loops=5)
+                                 Hash Cond: (ss.ss_customer_sk = c.c_customer_sk)
+                                 Buffers: shared hit=258760 read=5136
+                                 ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=10) (actual time=0.038..214.475 rows=2880010.40 loops=5)
+                                       Buffers: shared hit=258760
+                                 ->  Parallel Hash  (cost=6290.17..6290.17 rows=115417 width=62) (actual time=699.272..699.274 rows=55400.00 loops=5)
+                                       Buckets: 524288  Batches: 1  Memory Usage: 30592kB
+                                       Buffers: shared read=5136
+                                       ->  Parallel Seq Scan on customer c  (cost=0.00..6290.17 rows=115417 width=62) (actual time=295.619..657.866 rows=55400.00 loops=5)
+                                             Buffers: shared read=5136
+ Planning:
+   Buffers: shared hit=258 read=9
+ Planning Time: 53.942 ms
+ JIT:
+   Functions: 101
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 10.161 ms (Deform 5.273 ms), Inlining 456.300 ms, Optimization 865.543 ms, Emission 585.257 ms, Total 1917.260 ms
+ Execution Time: 4704.524 ms
+(40 rows)
+

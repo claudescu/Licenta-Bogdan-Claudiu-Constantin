@@ -1,0 +1,78 @@
+                                                                                                  QUERY PLAN                                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=235825.11..235825.11 rows=1 width=72) (actual time=1361.554..1386.707 rows=1.00 loops=1)
+   Buffers: shared hit=198476
+   ->  Sort  (cost=235825.11..235825.11 rows=1 width=72) (actual time=1319.300..1344.451 rows=1.00 loops=1)
+         Sort Key: (count(DISTINCT ws1.ws_order_number))
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=198476
+         ->  Aggregate  (cost=235825.09..235825.10 rows=1 width=72) (actual time=1319.259..1344.410 rows=1.00 loops=1)
+               Buffers: shared hit=198473
+               ->  Sort  (cost=235825.07..235825.08 rows=1 width=16) (actual time=1319.096..1344.267 rows=143.00 loops=1)
+                     Sort Key: ws1.ws_order_number
+                     Sort Method: quicksort  Memory: 30kB
+                     Buffers: shared hit=198473
+                     ->  Gather  (cost=227101.67..235825.06 rows=1 width=16) (actual time=1313.283..1344.195 rows=143.00 loops=1)
+                           Workers Planned: 2
+                           Workers Launched: 2
+                           Buffers: shared hit=198470
+                           ->  Parallel Hash Semi Join  (cost=226101.67..234824.96 rows=1 width=16) (actual time=1280.743..1281.986 rows=47.67 loops=3)
+                                 Hash Cond: (ws1.ws_order_number = ws2.ws_order_number)
+                                 Join Filter: (ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
+                                 Rows Removed by Join Filter: 15
+                                 Buffers: shared hit=198470
+                                 ->  Parallel Hash Right Anti Join  (cost=111894.69..120617.96 rows=1 width=20) (actual time=439.990..440.012 rows=47.67 loops=3)
+                                       Hash Cond: (wr1.wr_order_number = ws1.ws_order_number)
+                                       Buffers: shared hit=104510
+                                       ->  Parallel Seq Scan on web_returns wr1  (cost=0.00..8161.61 rows=149761 width=4) (actual time=0.015..15.866 rows=119808.67 loops=3)
+                                             Buffers: shared hit=6664
+                                       ->  Parallel Hash  (cost=111894.60..111894.60 rows=7 width=20) (actual time=398.181..398.192 rows=194.67 loops=3)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 104kB
+                                             Buffers: shared hit=97846
+                                             ->  Parallel Hash Join  (cost=108413.95..111894.60 rows=7 width=20) (actual time=386.385..398.089 rows=194.67 loops=3)
+                                                   Hash Cond: (customer_address.ca_address_sk = ws1.ws_ship_addr_sk)
+                                                   Buffers: shared hit=97846
+                                                   ->  Parallel Seq Scan on customer_address  (cost=0.00..3470.71 rows=2646 width=4) (actual time=0.057..11.521 rows=1445.67 loops=3)
+                                                         Filter: ((ca_state)::text = 'IL'::text)
+                                                         Rows Removed by Filter: 44554
+                                                         Buffers: shared hit=2456
+                                                   ->  Parallel Hash  (cost=108412.83..108412.83 rows=90 width=24) (actual time=386.198..386.206 rows=5535.00 loops=3)
+                                                         Buckets: 16384 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 1304kB
+                                                         Buffers: shared hit=95390
+                                                         ->  Hash Join  (cost=2071.48..108412.83 rows=90 width=24) (actual time=5.209..324.452 rows=5535.00 loops=3)
+                                                               Hash Cond: (ws1.ws_web_site_sk = web_site.web_site_sk)
+                                                               Buffers: shared hit=95390
+                                                               ->  Parallel Hash Join  (cost=2069.00..108406.59 rows=764 width=28) (actual time=5.071..318.740 rows=50385.67 loops=3)
+                                                                     Hash Cond: (ws1.ws_ship_date_sk = date_dim.d_date_sk)
+                                                                     Buffers: shared hit=95384
+                                                                     ->  Parallel Seq Scan on web_sales ws1  (cost=0.00..102958.66 rows=899866 width=32) (actual time=0.009..116.131 rows=1199834.33 loops=3)
+                                                                           Buffers: shared hit=93960
+                                                                     ->  Parallel Hash  (cost=2068.55..2068.55 rows=36 width=4) (actual time=4.989..4.991 rows=20.33 loops=3)
+                                                                           Buckets: 1024  Batches: 1  Memory Usage: 72kB
+                                                                           Buffers: shared hit=1424
+                                                                           ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=36 width=4) (actual time=3.311..4.938 rows=20.33 loops=3)
+                                                                                 Filter: ((d_date >= '1999-02-01'::date) AND (d_date <= '1999-04-02'::date))
+                                                                                 Rows Removed by Filter: 24329
+                                                                                 Buffers: shared hit=1424
+                                                               ->  Hash  (cost=2.42..2.42 rows=4 width=4) (actual time=0.088..0.089 rows=4.00 loops=3)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                     Buffers: shared hit=6
+                                                                     ->  Seq Scan on web_site  (cost=0.00..2.42 rows=4 width=4) (actual time=0.080..0.084 rows=4.00 loops=3)
+                                                                           Filter: ((web_company_name)::text = 'pri'::text)
+                                                                           Rows Removed by Filter: 30
+                                                                           Buffers: shared hit=6
+                                 ->  Parallel Hash  (cost=102958.66..102958.66 rows=899866 width=8) (actual time=828.609..828.610 rows=1199834.33 loops=3)
+                                       Buckets: 4194304  Batches: 1  Memory Usage: 173632kB
+                                       Buffers: shared hit=93960
+                                       ->  Parallel Seq Scan on web_sales ws2  (cost=0.00..102958.66 rows=899866 width=8) (actual time=34.051..421.546 rows=1199834.33 loops=3)
+                                             Buffers: shared hit=93960
+ Planning:
+   Buffers: shared hit=168
+ Planning Time: 2.619 ms
+ JIT:
+   Functions: 148
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 13.387 ms (Deform 7.256 ms), Inlining 0.000 ms, Optimization 7.766 ms, Emission 136.912 ms, Total 158.064 ms
+ Execution Time: 1415.099 ms
+(74 rows)
+

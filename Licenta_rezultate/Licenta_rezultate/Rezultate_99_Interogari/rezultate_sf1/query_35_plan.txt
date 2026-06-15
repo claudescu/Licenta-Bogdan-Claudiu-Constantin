@@ -1,0 +1,99 @@
+                                                                                                                                                     QUERY PLAN                                                                                                                                                     
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=8865272674.55..8865272680.55 rows=100 width=163) (actual time=487405.419..487406.935 rows=100.00 loops=1)
+   Buffers: shared hit=132874
+   ->  GroupAggregate  (cost=8865272674.55..8865273096.35 rows=7030 width=163) (actual time=486816.304..486817.797 rows=100.00 loops=1)
+         Group Key: ca.ca_state, customer_demographics.cd_gender, customer_demographics.cd_marital_status, customer_demographics.cd_dep_count, customer_demographics.cd_dep_employed_count, customer_demographics.cd_dep_college_count
+         Buffers: shared hit=132874
+         ->  Sort  (cost=8865272674.55..8865272692.13 rows=7030 width=19) (actual time=486815.746..486817.131 rows=103.00 loops=1)
+               Sort Key: ca.ca_state NULLS FIRST, customer_demographics.cd_gender NULLS FIRST, customer_demographics.cd_marital_status NULLS FIRST, customer_demographics.cd_dep_count NULLS FIRST, customer_demographics.cd_dep_employed_count NULLS FIRST, customer_demographics.cd_dep_college_count NULLS FIRST
+               Sort Method: quicksort  Memory: 382kB
+               Buffers: shared hit=132874
+               ->  Nested Loop  (cost=64028.54..8865272225.36 rows=7030 width=19) (actual time=84786.936..486809.971 rows=4881.00 loops=1)
+                     Join Filter: (c.c_current_addr_sk = ca.ca_address_sk)
+                     Rows Removed by Join Filter: 244045119
+                     Buffers: shared hit=132868
+                     ->  Seq Scan on customer_address ca  (cost=0.00..1420.00 rows=50000 width=7) (actual time=0.039..13.382 rows=50000.00 loops=1)
+                           Buffers: shared hit=920
+                     ->  Materialize  (cost=64028.54..8859998322.93 rows=7030 width=20) (actual time=0.028..9.532 rows=4881.00 loops=50000)
+                           Storage: Memory  Maximum Storage: 293kB
+                           Buffers: shared hit=131948
+                           ->  Nested Loop Semi Join  (cost=64028.54..8859998287.78 rows=7030 width=20) (actual time=1394.019..467408.927 rows=4881.00 loops=1)
+                                 Join Filter: (c.c_customer_sk = store_sales.ss_customer_sk)
+                                 Rows Removed by Join Filter: 5648026895
+                                 Buffers: shared hit=131948
+                                 ->  Hash Join  (cost=60958.00..8848887179.40 rows=72440 width=24) (actual time=1074.156..1425.245 rows=20952.00 loops=1)
+                                       Hash Cond: (c.c_current_cdemo_sk = customer_demographics.cd_demo_sk)
+                                       Buffers: shared hit=78732
+                                       ->  Seq Scan on customer c  (cost=0.00..8848825122.00 rows=75000 width=12) (actual time=400.826..542.512 rows=21716.00 loops=1)
+                                             Filter: ((ANY (c_customer_sk = (hashed SubPlan 2).col1)) OR (ANY (c_customer_sk = (hashed SubPlan 4).col1)))
+                                             Rows Removed by Filter: 78284
+                                             Buffers: shared hit=60992
+                                             SubPlan 2
+                                               ->  Gather  (cost=3070.54..25353.78 rows=2665 width=4) (actual time=19.079..160.351 rows=78963.00 loops=1)
+                                                     Workers Planned: 3
+                                                     Workers Launched: 3
+                                                     Buffers: shared hit=20248
+                                                     ->  Parallel Hash Join  (cost=2070.54..24087.28 rows=860 width=4) (actual time=104.948..143.249 rows=19740.75 loops=4)
+                                                           Hash Cond: (web_sales.ws_sold_date_sk = date_dim_1.d_date_sk)
+                                                           Buffers: shared hit=20248
+                                                           ->  Parallel Seq Scan on web_sales  (cost=0.00..21142.33 rows=231833 width=8) (actual time=0.021..15.474 rows=179846.00 loops=4)
+                                                                 Buffers: shared hit=18824
+                                                           ->  Parallel Hash  (cost=2068.55..2068.55 rows=159 width=4) (actual time=4.538..4.542 rows=68.50 loops=4)
+                                                                 Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                 Buffers: shared hit=1424
+                                                                 ->  Parallel Seq Scan on date_dim date_dim_1  (cost=0.00..2068.55 rows=159 width=4) (actual time=14.012..18.025 rows=274.00 loops=1)
+                                                                       Filter: ((d_qoy < 4) AND (d_year = 2002))
+                                                                       Rows Removed by Filter: 72775
+                                                                       Buffers: shared hit=1424
+                                             SubPlan 4
+                                               ->  Gather  (cost=3070.54..46013.48 rows=5321 width=4) (actual time=187.301..203.401 rows=159153.00 loops=1)
+                                                     Workers Planned: 4
+                                                     Workers Launched: 4
+                                                     Buffers: shared hit=38872
+                                                     ->  Parallel Hash Join  (cost=2070.54..44481.38 rows=1330 width=4) (actual time=161.520..178.928 rows=31830.60 loops=5)
+                                                           Hash Cond: (catalog_sales.cs_sold_date_sk = date_dim_2.d_date_sk)
+                                                           Buffers: shared hit=38872
+                                                           ->  Parallel Seq Scan on catalog_sales  (cost=0.00..41051.67 rows=360367 width=8) (actual time=0.021..23.889 rows=288309.60 loops=5)
+                                                                 Buffers: shared hit=37448
+                                                           ->  Parallel Hash  (cost=2068.55..2068.55 rows=159 width=4) (actual time=3.790..3.792 rows=54.80 loops=5)
+                                                                 Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                 Buffers: shared hit=1424
+                                                                 ->  Parallel Seq Scan on date_dim date_dim_2  (cost=0.00..2068.55 rows=159 width=4) (actual time=15.488..18.755 rows=274.00 loops=1)
+                                                                       Filter: ((d_qoy < 4) AND (d_year = 2002))
+                                                                       Rows Removed by Filter: 72775
+                                                                       Buffers: shared hit=1424
+                                       ->  Hash  (cost=36948.00..36948.00 rows=1920800 width=20) (actual time=663.276..663.284 rows=1920800.00 loops=1)
+                                             Buckets: 2097152  Batches: 1  Memory Usage: 113925kB
+                                             Buffers: shared hit=17740
+                                             ->  Seq Scan on customer_demographics  (cost=0.00..36948.00 rows=1920800 width=20) (actual time=0.055..227.176 rows=1920800.00 loops=1)
+                                                   Buffers: shared hit=17740
+                                 ->  Materialize  (cost=3070.54..65844.79 rows=10165 width=4) (actual time=0.001..10.620 rows=269570.05 loops=20952)
+                                       Storage: Memory  Maximum Storage: 13631kB
+                                       Buffers: shared hit=53216
+                                       ->  Gather  (cost=3070.54..65793.97 rows=10165 width=4) (actual time=8.154..190.225 rows=306939.00 loops=1)
+                                             Workers Planned: 4
+                                             Workers Launched: 4
+                                             Buffers: shared hit=53216
+                                             ->  Parallel Hash Join  (cost=2070.54..63777.47 rows=2541 width=4) (actual time=104.386..205.130 rows=61387.80 loops=5)
+                                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=53216
+                                                   ->  Parallel Seq Scan on store_sales  (cost=0.00..58992.01 rows=720002 width=8) (actual time=0.020..42.774 rows=576080.80 loops=5)
+                                                         Buffers: shared hit=51792
+                                                   ->  Parallel Hash  (cost=2068.55..2068.55 rows=159 width=4) (actual time=1.426..1.428 rows=54.80 loops=5)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=159 width=4) (actual time=3.718..7.017 rows=274.00 loops=1)
+                                                               Filter: ((d_qoy < 4) AND (d_year = 2002))
+                                                               Rows Removed by Filter: 72775
+                                                               Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=182
+ Planning Time: 1.705 ms
+ JIT:
+   Functions: 218
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 12.340 ms (Deform 5.626 ms), Inlining 757.259 ms, Optimization 825.419 ms, Emission 520.696 ms, Total 2115.714 ms
+ Execution Time: 487457.647 ms
+(95 rows)
+

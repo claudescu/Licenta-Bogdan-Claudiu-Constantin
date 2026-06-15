@@ -1,0 +1,65 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                   QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=108106.02..108106.18 rows=64 width=51) (actual time=521.160..533.095 rows=100.00 loops=1)
+   Buffers: shared hit=7365 read=61216
+   ->  Sort  (cost=108106.02..108106.18 rows=64 width=51) (actual time=498.868..510.796 rows=100.00 loops=1)
+         Sort Key: warehouse.w_warehouse_name NULLS FIRST, item.i_item_id NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 32kB
+         Buffers: shared hit=7365 read=61216
+         ->  GroupAggregate  (cost=108003.28..108104.10 rows=64 width=51) (actual time=488.160..510.352 rows=1607.00 loops=1)
+               Group Key: warehouse.w_warehouse_name, item.i_item_id
+               Filter: ((CASE WHEN (sum(CASE WHEN (date_dim.d_date < '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END) > 0) THEN (((sum(CASE WHEN (date_dim.d_date >= '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END))::numeric * 1.000) / (sum(CASE WHEN (date_dim.d_date < '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END))::numeric) ELSE NULL::numeric END >= 0.66666666666666666667) AND (CASE WHEN (sum(CASE WHEN (date_dim.d_date < '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END) > 0) THEN (((sum(CASE WHEN (date_dim.d_date >= '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END))::numeric * 1.000) / (sum(CASE WHEN (date_dim.d_date < '2000-03-11'::date) THEN inventory.inv_quantity_on_hand ELSE 0 END))::numeric) ELSE NULL::numeric END <= 1.5000000000000000))
+               Rows Removed by Filter: 1188
+               Buffers: shared hit=7365 read=61216
+               ->  Gather Merge  (cost=108003.28..108072.36 rows=577 width=43) (actual time=488.087..505.675 rows=25155.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=7365 read=61216
+                     ->  Sort  (cost=107003.22..107003.58 rows=144 width=43) (actual time=458.246..458.559 rows=5031.00 loops=5)
+                           Sort Key: warehouse.w_warehouse_name, item.i_item_id
+                           Sort Method: quicksort  Memory: 487kB
+                           Buffers: shared hit=7365 read=61216
+                           Worker 0:  Sort Method: quicksort  Memory: 502kB
+                           Worker 1:  Sort Method: quicksort  Memory: 487kB
+                           Worker 2:  Sort Method: quicksort  Memory: 444kB
+                           Worker 3:  Sort Method: quicksort  Memory: 495kB
+                           ->  Hash Join  (cost=3073.78..106998.06 rows=144 width=43) (actual time=212.272..453.351 rows=5031.00 loops=5)
+                                 Hash Cond: (inventory.inv_warehouse_sk = warehouse.w_warehouse_sk)
+                                 Buffers: shared hit=7333 read=61216
+                                 ->  Hash Join  (cost=3072.66..106994.96 rows=144 width=29) (actual time=198.657..438.979 rows=5031.00 loops=5)
+                                       Hash Cond: (inventory.inv_item_sk = item.i_item_sk)
+                                       Buffers: shared hit=7328 read=61216
+                                       ->  Parallel Hash Join  (cost=2068.99..105980.96 rows=2372 width=16) (actual time=191.856..425.767 rows=81000.00 loops=5)
+                                             Hash Cond: (inventory.inv_date_sk = date_dim.d_date_sk)
+                                             Buffers: shared hit=3728 read=61216
+                                             ->  Parallel Seq Scan on inventory  (cost=0.00..92885.74 rows=2936574 width=16) (actual time=0.841..233.168 rows=2349000.00 loops=5)
+                                                   Buffers: shared hit=2304 read=61216
+                                             ->  Parallel Hash  (cost=2068.55..2068.55 rows=35 width=8) (actual time=2.023..2.024 rows=12.20 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                   Buffers: shared hit=1424
+                                                   ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=35 width=8) (actual time=4.834..9.979 rows=61.00 loops=1)
+                                                         Filter: ((d_date >= '2000-02-10'::date) AND (d_date <= '2000-04-10'::date))
+                                                         Rows Removed by Filter: 72988
+                                                         Buffers: shared hit=1424
+                                       ->  Hash  (cost=990.00..990.00 rows=1094 width=21) (actual time=6.779..6.780 rows=1104.00 loops=5)
+                                             Buckets: 2048  Batches: 1  Memory Usage: 77kB
+                                             Buffers: shared hit=3600
+                                             ->  Seq Scan on item  (cost=0.00..990.00 rows=1094 width=21) (actual time=0.053..6.583 rows=1104.00 loops=5)
+                                                   Filter: ((i_current_price >= 0.99) AND (i_current_price <= 1.49))
+                                                   Rows Removed by Filter: 16896
+                                                   Buffers: shared hit=3600
+                                 ->  Hash  (cost=1.05..1.05 rows=5 width=22) (actual time=13.591..13.592 rows=5.00 loops=5)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=5
+                                       ->  Seq Scan on warehouse  (cost=0.00..1.05 rows=5 width=22) (actual time=13.564..13.567 rows=5.00 loops=5)
+                                             Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=226
+ Planning Time: 1.766 ms
+ JIT:
+   Functions: 160
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 8.887 ms (Deform 3.571 ms), Inlining 0.000 ms, Optimization 3.285 ms, Emission 86.944 ms, Total 99.116 ms
+ Execution Time: 558.166 ms
+(61 rows)
+

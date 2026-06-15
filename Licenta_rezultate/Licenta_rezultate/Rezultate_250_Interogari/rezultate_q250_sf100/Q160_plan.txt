@@ -1,0 +1,53 @@
+                                                                                       QUERY PLAN                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4348283.36..4348283.61 rows=100 width=127) (actual time=157194.506..157213.252 rows=100.00 loops=1)
+   Buffers: shared hit=22643 read=3724232
+   ->  Sort  (cost=4348283.36..4348301.16 rows=7120 width=127) (actual time=156636.548..156655.284 rows=100.00 loops=1)
+         Sort Key: (sum(cs.cs_coupon_amt)) DESC
+         Sort Method: top-N heapsort  Memory: 46kB
+         Buffers: shared hit=22643 read=3724232
+         ->  Finalize GroupAggregate  (cost=4343924.79..4348011.23 rows=7120 width=127) (actual time=156629.398..156654.441 rows=1108.00 loops=1)
+               Group Key: i.i_brand, i.i_category
+               Buffers: shared hit=22640 read=3724232
+               ->  Gather Merge  (cost=4343924.79..4347334.83 rows=28480 width=95) (actual time=156629.313..156650.018 rows=5540.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=22640 read=3724232
+                     ->  Sort  (cost=4342924.73..4342942.53 rows=7120 width=95) (actual time=156588.823..156588.939 rows=1108.00 loops=5)
+                           Sort Key: i.i_brand, i.i_category
+                           Sort Method: quicksort  Memory: 249kB
+                           Buffers: shared hit=22640 read=3724232
+                           Worker 0:  Sort Method: quicksort  Memory: 249kB
+                           Worker 1:  Sort Method: quicksort  Memory: 249kB
+                           Worker 2:  Sort Method: quicksort  Memory: 249kB
+                           Worker 3:  Sort Method: quicksort  Memory: 249kB
+                           ->  Partial HashAggregate  (cost=4342362.34..4342469.14 rows=7120 width=95) (actual time=156586.252..156587.361 rows=1108.00 loops=5)
+                                 Group Key: i.i_brand, i.i_category
+                                 Batches: 1  Memory Usage: 1297kB
+                                 Buffers: shared hit=22608 read=3724232
+                                 Worker 0:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 1:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 2:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 3:  Batches: 1  Memory Usage: 1297kB
+                                 ->  Parallel Hash Join  (cost=10120.50..4254440.36 rows=7033758 width=32) (actual time=480.171..151444.750 rows=5618351.00 loops=5)
+                                       Hash Cond: (cs.cs_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=22608 read=3724232
+                                       ->  Parallel Seq Scan on catalog_sales cs  (cost=0.00..4188635.95 rows=7033758 width=13) (actual time=18.938..146175.906 rows=5618351.00 loops=5)
+                                             Filter: (cs_coupon_amt > '0'::numeric)
+                                             Rows Removed by Filter: 23181062
+                                             Buffers: shared hit=14400 read=3724232
+                                       ->  Parallel Hash  (cost=9058.00..9058.00 rows=85000 width=27) (actual time=460.667..460.672 rows=40800.00 loops=5)
+                                             Buckets: 262144  Batches: 1  Memory Usage: 14880kB
+                                             Buffers: shared hit=8208
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..9058.00 rows=85000 width=27) (actual time=353.934..372.928 rows=40800.00 loops=5)
+                                                   Buffers: shared hit=8208
+ Planning:
+   Buffers: shared hit=212
+ Planning Time: 1.483 ms
+ JIT:
+   Functions: 104
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 14.890 ms (Deform 9.548 ms), Inlining 505.646 ms, Optimization 1160.628 ms, Emission 662.679 ms, Total 2343.842 ms
+ Execution Time: 157251.102 ms
+(49 rows)
+

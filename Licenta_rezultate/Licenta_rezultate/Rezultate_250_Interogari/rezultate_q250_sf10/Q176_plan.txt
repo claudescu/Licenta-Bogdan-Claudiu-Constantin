@@ -1,0 +1,50 @@
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=278815.65..282836.84 rows=6600 width=96) (actual time=7223.018..7223.927 rows=130.00 loops=1)
+   Sort Key: d.d_year, (sum(ws.ws_net_paid)) DESC
+   Presorted Key: d.d_year
+   Full-sort Groups: 3  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   Buffers: shared hit=189277
+   ->  Finalize GroupAggregate  (cost=278795.88..282583.87 rows=6600 width=96) (actual time=7222.910..7223.783 rows=130.00 loops=1)
+         Group Key: d.d_year, ws_site.web_name, ws_site.web_market_manager
+         Buffers: shared hit=189274
+         ->  Gather Merge  (cost=278795.88..281956.87 rows=26400 width=96) (actual time=7222.884..7223.658 rows=130.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=189274
+               ->  Sort  (cost=277795.82..277812.32 rows=6600 width=96) (actual time=7222.058..7222.070 rows=130.00 loops=1)
+                     Sort Key: d.d_year, ws_site.web_name, ws_site.web_market_manager
+                     Sort Method: quicksort  Memory: 48kB
+                     Buffers: shared hit=189274
+                     ->  Partial HashAggregate  (cost=277278.11..277377.11 rows=6600 width=96) (actual time=7221.868..7221.959 rows=130.00 loops=1)
+                           Group Key: d.d_year, ws_site.web_name, ws_site.web_market_manager
+                           Batches: 1  Memory Usage: 289kB
+                           Buffers: shared hit=189274
+                           ->  Hash Join  (cost=2393.77..250298.60 rows=1798634 width=36) (actual time=65.584..5172.597 rows=7194879.00 loops=1)
+                                 Hash Cond: (ws.ws_web_site_sk = ws_site.web_site_sk)
+                                 Buffers: shared hit=189274
+                                 ->  Parallel Hash Join  (cost=2390.82..225563.09 rows=1798994 width=20) (actual time=36.771..4043.015 rows=7195796.00 loops=1)
+                                       Hash Cond: (ws.ws_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=189272
+                                       ->  Parallel Seq Scan on web_sales ws  (cost=0.00..205842.14 rows=1799414 width=20) (actual time=0.007..776.922 rows=7197566.00 loops=1)
+                                             Buffers: shared hit=187848
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=34.453..34.455 rows=73049.00 loops=1)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.048..18.718 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+                                 ->  Hash  (cost=2.42..2.42 rows=42 width=24) (actual time=28.769..28.770 rows=42.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on web_site ws_site  (cost=0.00..2.42 rows=42 width=24) (actual time=28.694..28.729 rows=42.00 loops=1)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=157
+ Planning Time: 1.243 ms
+ JIT:
+   Functions: 29
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 2.726 ms (Deform 1.321 ms), Inlining 0.000 ms, Optimization 1.276 ms, Emission 27.461 ms, Total 31.464 ms
+ Execution Time: 7259.081 ms
+(46 rows)
+

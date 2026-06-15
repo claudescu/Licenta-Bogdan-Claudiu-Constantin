@@ -1,0 +1,45 @@
+                                                                                       QUERY PLAN                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=27097306.81..27097306.85 rows=14 width=55) (actual time=627185.687..627586.172 rows=29.00 loops=1)
+   Sort Key: (round((((count(DISTINCT sr.sr_ticket_number))::numeric / (NULLIF(count(DISTINCT ss.ss_ticket_number), 0))::numeric) * '100'::numeric), 2)) DESC
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=24622 read=2802867, temp read=920325 written=920471
+   ->  GroupAggregate  (cost=9264397.41..27097306.55 rows=14 width=55) (actual time=559208.327..627584.225 rows=29.00 loops=1)
+         Group Key: s.s_store_name, s.s_state
+         Buffers: shared hit=24619 read=2802867, temp read=920325 written=920471
+         ->  Gather Merge  (cost=9264397.41..25722738.18 rows=137456802 width=15) (actual time=553241.557..611564.595 rows=137546696.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=24619 read=2802867, temp read=920325 written=920471
+               ->  Sort  (cost=9263397.35..9349307.85 rows=34364200 width=15) (actual time=553230.823..600940.149 rows=137546696.00 loops=1)
+                     Sort Key: s.s_store_name, s.s_state, ss.ss_ticket_number
+                     Sort Method: external merge  Disk: 3104952kB
+                     Buffers: shared hit=24619 read=2802867, temp read=920325 written=920471
+                     ->  Hash Join  (cost=344170.34..4617983.49 rows=34364200 width=15) (actual time=206568.559..296770.001 rows=137546696.00 loops=1)
+                           Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                           Buffers: shared hit=24619 read=2802867, temp read=532206 written=532232
+                           ->  Parallel Hash Left Join  (cost=344161.10..4139328.32 rows=36001048 width=12) (actual time=206196.437..275316.889 rows=144023324.00 loops=1)
+                                 Hash Cond: ((ss.ss_store_sk = sr.sr_store_sk) AND (ss.ss_ticket_number = sr.sr_ticket_number))
+                                 Buffers: shared hit=24613 read=2802867, temp read=532206 written=532232
+                                 ->  Parallel Seq Scan on store_sales ss  (cost=0.00..2947346.48 rows=36001048 width=8) (actual time=0.525..51094.149 rows=144004764.00 loops=1)
+                                       Buffers: shared hit=24613 read=2562723
+                                 ->  Parallel Hash  (cost=276128.04..276128.04 rows=3598404 width=8) (actual time=131762.859..131763.056 rows=14396192.00 loops=1)
+                                       Buckets: 4194304  Batches: 8  Memory Usage: 103264kB
+                                       Buffers: shared read=240144, temp written=42876
+                                       ->  Parallel Seq Scan on store_returns sr  (cost=0.00..276128.04 rows=3598404 width=8) (actual time=115.213..125866.989 rows=14396192.00 loops=1)
+                                             Buffers: shared read=240144
+                           ->  Hash  (cost=7.44..7.44 rows=144 width=11) (actual time=329.433..329.435 rows=144.00 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 15kB
+                                 Buffers: shared hit=6
+                                 ->  Seq Scan on store s  (cost=0.00..7.44 rows=144 width=11) (actual time=329.275..329.386 rows=144.00 loops=1)
+                                       Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=126 read=1
+ Planning Time: 36.980 ms
+ JIT:
+   Functions: 21
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 1.669 ms (Deform 0.699 ms), Inlining 99.236 ms, Optimization 137.385 ms, Emission 102.830 ms, Total 341.119 ms
+ Execution Time: 628176.224 ms
+(41 rows)
+

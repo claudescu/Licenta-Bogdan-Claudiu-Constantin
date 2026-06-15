@@ -1,0 +1,51 @@
+                                                                                     QUERY PLAN                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=8978226.37..8978226.52 rows=60 width=74) (actual time=59034.780..61111.933 rows=77.00 loops=1)
+   Buffers: shared hit=2548 read=266368, temp read=265948 written=266004
+   ->  Sort  (cost=8978226.37..8978226.52 rows=60 width=74) (actual time=58736.015..60813.160 rows=77.00 loops=1)
+         Sort Key: (sum(inv.inv_quantity_on_hand)) DESC
+         Sort Method: quicksort  Memory: 34kB
+         Buffers: shared hit=2548 read=266368, temp read=265948 written=266004
+         ->  GroupAggregate  (cost=2332157.46..8978224.60 rows=60 width=74) (actual time=35130.121..60812.799 rows=77.00 loops=1)
+               Group Key: w.w_warehouse_name, w.w_state, i.i_category
+               Buffers: shared hit=2545 read=266368, temp read=265948 written=266004
+               ->  Gather Merge  (cost=2332157.46..8238317.65 rows=49327080 width=34) (actual time=34788.939..55176.270 rows=49329000.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=2545 read=266368, temp read=265948 written=266004
+                     ->  Sort  (cost=2331157.40..2361986.83 rows=12331770 width=34) (actual time=33839.806..41395.022 rows=9865800.00 loops=5)
+                           Sort Key: w.w_warehouse_name, w.w_state, i.i_category, inv.inv_item_sk
+                           Sort Method: external merge  Disk: 426648kB
+                           Buffers: shared hit=2545 read=266368, temp read=265948 written=266004
+                           Worker 0:  Sort Method: external merge  Disk: 431896kB
+                           Worker 1:  Sort Method: external merge  Disk: 410960kB
+                           Worker 2:  Sort Method: external merge  Disk: 440160kB
+                           Worker 3:  Sort Method: external merge  Disk: 417920kB
+                           ->  Parallel Hash Join  (cost=2907.87..681228.04 rows=12331770 width=34) (actual time=248.436..6020.433 rows=9865800.00 loops=5)
+                                 Hash Cond: (inv.inv_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=2485 read=266368
+                                 ->  Hash Join  (cost=1.16..559536.69 rows=12331770 width=28) (actual time=242.478..3844.353 rows=9865800.00 loops=5)
+                                       Hash Cond: (inv.inv_warehouse_sk = w.w_warehouse_sk)
+                                       Buffers: shared hit=293 read=266368
+                                       ->  Parallel Seq Scan on inventory inv  (cost=0.00..389973.70 rows=12331770 width=12) (actual time=39.708..1922.253 rows=9865800.00 loops=5)
+                                             Buffers: shared hit=288 read=266368
+                                       ->  Hash  (cost=1.07..1.07 rows=7 width=24) (actual time=202.734..202.738 rows=7.00 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             Buffers: shared hit=5
+                                             ->  Seq Scan on warehouse w  (cost=0.00..1.07 rows=7 width=24) (actual time=202.709..202.715 rows=7.00 loops=5)
+                                                   Buffers: shared hit=5
+                                 ->  Parallel Hash  (cost=2509.65..2509.65 rows=31765 width=10) (actual time=5.798..5.800 rows=10800.00 loops=5)
+                                       Buckets: 65536  Batches: 1  Memory Usage: 3008kB
+                                       Buffers: shared hit=2192
+                                       ->  Parallel Seq Scan on item i  (cost=0.00..2509.65 rows=31765 width=10) (actual time=0.042..17.800 rows=54000.00 loops=1)
+                                             Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=140
+ Planning Time: 0.981 ms
+ JIT:
+   Functions: 99
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 5.974 ms (Deform 3.307 ms), Inlining 336.801 ms, Optimization 601.078 ms, Emission 374.370 ms, Total 1318.222 ms
+ Execution Time: 61206.089 ms
+(47 rows)
+

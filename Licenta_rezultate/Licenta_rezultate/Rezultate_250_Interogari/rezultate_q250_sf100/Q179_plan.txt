@@ -1,0 +1,51 @@
+                                                                                       QUERY PLAN                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=53076332.49..53076332.74 rows=100 width=87) (actual time=917176.056..917613.039 rows=100.00 loops=1)
+   Buffers: shared hit=802568 read=4373363, temp read=1523849 written=1524177
+   ->  Sort  (cost=53076332.49..53076412.49 rows=32000 width=87) (actual time=916734.386..917171.357 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_profit)) DESC
+         Sort Method: top-N heapsort  Memory: 37kB
+         Buffers: shared hit=802568 read=4373363, temp read=1523849 written=1524177
+         ->  GroupAggregate  (cost=16954544.29..53075109.47 rows=32000 width=87) (actual time=690252.870..917165.012 rows=1701.00 loops=1)
+               Group Key: s.s_store_name, s.s_state, d.d_year, d.d_qoy
+               Buffers: shared hit=802565 read=4373363, temp read=1523849 written=1524177
+               ->  Gather Merge  (cost=16954544.29..48468638.68 rows=263199474 width=31) (actual time=690112.974..867834.436 rows=268562298.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=802565 read=4373363, temp read=1523849 written=1524177
+                     ->  Sort  (cost=16953544.23..17118043.90 rows=65799868 width=31) (actual time=689109.745..757582.310 rows=53712459.60 loops=5)
+                           Sort Key: s.s_store_name, s.s_state, d.d_year, d.d_qoy, ss.ss_customer_sk
+                           Sort Method: external merge  Disk: 2450488kB
+                           Buffers: shared hit=802565 read=4373363, temp read=1523849 written=1524177
+                           Worker 0:  Sort Method: external merge  Disk: 2376856kB
+                           Worker 1:  Sort Method: external merge  Disk: 2463592kB
+                           Worker 2:  Sort Method: external merge  Disk: 2412472kB
+                           Worker 3:  Sort Method: external merge  Disk: 2487384kB
+                           ->  Hash Join  (cost=2419.87..7486812.91 rows=65799868 width=31) (actual time=267.087..537477.853 rows=53712459.60 loops=5)
+                                 Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                 Buffers: shared hit=802505 read=4373363
+                                 ->  Parallel Hash Join  (cost=2390.82..6571047.45 rows=68730060 width=28) (actual time=9.371..523596.231 rows=55008423.00 loops=5)
+                                       Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=802405 read=4373363
+                                       ->  Parallel Seq Scan on store_sales ss  (cost=0.00..5894357.20 rows=72001320 width=24) (actual time=2.090..499603.837 rows=57599404.80 loops=5)
+                                             Buffers: shared hit=800981 read=4373363
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=12) (actual time=6.782..6.812 rows=14609.80 loops=5)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 4480kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=12) (actual time=0.065..19.609 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+                                 ->  Hash  (cost=24.02..24.02 rows=402 width=11) (actual time=257.686..257.699 rows=402.00 loops=5)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 26kB
+                                       Buffers: shared hit=100
+                                       ->  Seq Scan on store s  (cost=0.00..24.02 rows=402 width=11) (actual time=257.381..257.618 rows=402.00 loops=5)
+                                             Buffers: shared hit=100
+ Planning:
+   Buffers: shared hit=148
+ Planning Time: 1.754 ms
+ JIT:
+   Functions: 99
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 11.262 ms (Deform 7.215 ms), Inlining 415.807 ms, Optimization 829.490 ms, Emission 483.458 ms, Total 1740.016 ms
+ Execution Time: 917937.370 ms
+(47 rows)
+

@@ -1,0 +1,124 @@
+                                                                                                                                                      QUERY PLAN                                                                                                                                                      
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=3015003.13..3236526.32 rows=1 width=164) (actual time=12059.068..20222.232 rows=307.00 loops=1)
+   Join Filter: (((ss1.ca_county)::text = (ws3.ca_county)::text) AND (CASE WHEN (ws2.web_sales > '0'::numeric) THEN ((ws3.web_sales * 1.0000) / ws2.web_sales) ELSE NULL::numeric END > CASE WHEN (ss2.store_sales > '0'::numeric) THEN ((ss3.store_sales * 1.0000) / ss2.store_sales) ELSE NULL::numeric END))
+   Rows Removed by Join Filter: 1717403
+   Buffers: shared hit=245236 read=471720
+   CTE ss
+     ->  Finalize GroupAggregate  (cost=1303757.76..2103354.23 rows=1476800 width=54) (actual time=5120.942..5265.062 rows=38497.00 loops=1)
+           Group Key: customer_address.ca_county, date_dim.d_qoy, date_dim.d_year
+           Buffers: shared hit=51588 read=471720
+           ->  Gather Merge  (cost=1303757.76..2011054.23 rows=5907200 width=54) (actual time=5120.869..5201.678 rows=186951.00 loops=1)
+                 Workers Planned: 4
+                 Workers Launched: 4
+                 Buffers: shared hit=51588 read=471720
+                 ->  Sort  (cost=1302757.71..1306449.71 rows=1476800 width=54) (actual time=5026.317..5042.709 rows=37395.80 loops=5)
+                       Sort Key: customer_address.ca_county, date_dim.d_qoy, date_dim.d_year
+                       Sort Method: quicksort  Memory: 5618kB
+                       Buffers: shared hit=51588 read=471720
+                       Worker 0:  Sort Method: quicksort  Memory: 5608kB
+                       Worker 1:  Sort Method: quicksort  Memory: 5608kB
+                       Worker 2:  Sort Method: quicksort  Memory: 5615kB
+                       Worker 3:  Sort Method: quicksort  Memory: 5605kB
+                       ->  Partial HashAggregate  (cost=1013787.87..1121864.59 rows=1476800 width=54) (actual time=4955.231..4981.802 rows=37397.00 loops=5)
+                             Group Key: customer_address.ca_county, date_dim.d_qoy, date_dim.d_year
+                             Planned Partitions: 4  Batches: 1  Memory Usage: 24593kB
+                             Buffers: shared hit=51528 read=471720
+                             Worker 0:  Batches: 1  Memory Usage: 24593kB
+                             Worker 1:  Batches: 1  Memory Usage: 24593kB
+                             Worker 2:  Batches: 1  Memory Usage: 24593kB
+                             Worker 3:  Batches: 1  Memory Usage: 24593kB
+                             ->  Parallel Hash Join  (cost=9110.58..718564.79 rows=6554823 width=28) (actual time=904.167..3625.864 rows=5371190.40 loops=5)
+                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                   Buffers: shared hit=51528 read=471720
+                                   ->  Parallel Hash Join  (cost=6719.75..651826.04 rows=6877372 width=24) (actual time=61.748..2008.440 rows=5500879.80 loops=5)
+                                         Hash Cond: (store_sales.ss_addr_sk = customer_address.ca_address_sk)
+                                         Buffers: shared hit=50104 read=471720
+                                         ->  Parallel Seq Scan on store_sales  (cost=0.00..589449.80 rows=7200180 width=14) (actual time=0.752..585.249 rows=5760198.20 loops=5)
+                                               Buffers: shared hit=45728 read=471720
+                                         ->  Parallel Hash  (cost=5417.67..5417.67 rows=104167 width=18) (actual time=59.726..59.728 rows=50000.00 loops=5)
+                                               Buckets: 262144  Batches: 1  Memory Usage: 15584kB
+                                               Buffers: shared hit=4376
+                                               ->  Parallel Seq Scan on customer_address  (cost=0.00..5417.67 rows=104167 width=18) (actual time=0.195..23.824 rows=50000.00 loops=5)
+                                                     Buffers: shared hit=4376
+                                   ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=12) (actual time=840.908..840.910 rows=14609.80 loops=5)
+                                         Buckets: 131072  Batches: 1  Memory Usage: 4576kB
+                                         Buffers: shared hit=1424
+                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..1853.70 rows=42970 width=12) (actual time=634.644..641.046 rows=14609.80 loops=5)
+                                               Buffers: shared hit=1424
+   CTE ws
+     ->  HashAggregate  (cost=794822.81..911648.90 rows=1476800 width=54) (actual time=6852.420..6875.316 rows=37641.00 loops=1)
+           Group Key: customer_address_1.ca_county, date_dim_1.d_qoy, date_dim_1.d_year
+           Planned Partitions: 4  Batches: 1  Memory Usage: 24593kB
+           Buffers: shared hit=193648
+           ->  Hash Join  (cost=13068.60..470776.80 rows=7194777 width=28) (actual time=141.486..5038.676 rows=7194953.00 loops=1)
+                 Hash Cond: (web_sales.ws_bill_addr_sk = customer_address_1.ca_address_sk)
+                 Buffers: shared hit=193648
+                 ->  Hash Join  (cost=3067.60..361843.12 rows=7195976 width=18) (actual time=29.223..3735.429 rows=7195796.00 loops=1)
+                       Hash Cond: (web_sales.ws_sold_date_sk = date_dim_1.d_date_sk)
+                       Buffers: shared hit=189272
+                       ->  Seq Scan on web_sales  (cost=0.00..259824.55 rows=7197655 width=14) (actual time=0.101..1503.904 rows=7197566.00 loops=1)
+                             Buffers: shared hit=187848
+                       ->  Hash  (cost=2154.49..2154.49 rows=73049 width=12) (actual time=26.919..26.921 rows=73049.00 loops=1)
+                             Buckets: 131072  Batches: 1  Memory Usage: 4163kB
+                             Buffers: shared hit=1424
+                             ->  Seq Scan on date_dim date_dim_1  (cost=0.00..2154.49 rows=73049 width=12) (actual time=0.046..11.841 rows=73049.00 loops=1)
+                                   Buffers: shared hit=1424
+                 ->  Hash  (cost=6876.00..6876.00 rows=250000 width=18) (actual time=107.724..107.725 rows=250000.00 loops=1)
+                       Buckets: 262144  Batches: 1  Memory Usage: 14740kB
+                       Buffers: shared hit=4376
+                       ->  Seq Scan on customer_address customer_address_1  (cost=0.00..6876.00 rows=250000 width=18) (actual time=0.052..41.422 rows=250000.00 loops=1)
+                             Buffers: shared hit=4376
+   ->  Nested Loop  (cost=0.00..184602.06 rows=1 width=324) (actual time=12020.671..18600.011 rows=930.00 loops=1)
+         Join Filter: (((ss1.ca_county)::text = (ws2.ca_county)::text) AND (CASE WHEN (ws1.web_sales > '0'::numeric) THEN ((ws2.web_sales * 1.0000) / ws1.web_sales) ELSE NULL::numeric END > CASE WHEN (ss1.store_sales > '0'::numeric) THEN ((ss2.store_sales * 1.0000) / ss1.store_sales) ELSE NULL::numeric END))
+         Rows Removed by Join Filter: 3397560
+         Buffers: shared hit=204003 read=96280
+         ->  Nested Loop  (cost=0.00..147680.95 rows=1 width=260) (actual time=11978.569..15433.005 rows=1842.00 loops=1)
+               Join Filter: ((ss1.ca_county)::text = (ws1.ca_county)::text)
+               Rows Removed by Join Filter: 3400336
+               Buffers: shared hit=204003 read=96280
+               ->  Merge Join  (cost=0.00..110760.49 rows=1 width=196) (actual time=5121.043..5293.716 rows=1846.00 loops=1)
+                     Merge Cond: ((ss3.ca_county)::text = (ss1.ca_county)::text)
+                     Buffers: shared hit=10355 read=96280
+                     ->  CTE Scan on ss ss3  (cost=0.00..36920.00 rows=37 width=64) (actual time=5120.988..5159.398 rows=1847.00 loops=1)
+                           Filter: ((d_year = 2000) AND (d_qoy = 3))
+                           Rows Removed by Filter: 36650
+                           Storage: Memory  Maximum Storage: 2900kB
+                           Buffers: shared hit=10355 read=96280
+                     ->  Materialize  (cost=0.00..73840.37 rows=7 width=132) (actual time=0.037..132.570 rows=1846.00 loops=1)
+                           Storage: Memory  Maximum Storage: 17kB
+                           ->  Merge Join  (cost=0.00..73840.35 rows=7 width=132) (actual time=0.024..131.072 rows=1846.00 loops=1)
+                                 Merge Cond: ((ss1.ca_county)::text = (ss2.ca_county)::text)
+                                 ->  CTE Scan on ss ss1  (cost=0.00..36920.00 rows=37 width=68) (actual time=0.005..2.129 rows=1847.00 loops=1)
+                                       Filter: ((d_qoy = 1) AND (d_year = 2000))
+                                       Rows Removed by Filter: 36639
+                                       Storage: Memory  Maximum Storage: 2900kB
+                                 ->  Materialize  (cost=0.00..36920.09 rows=37 width=64) (actual time=0.008..126.636 rows=1847.00 loops=1)
+                                       Storage: Memory  Maximum Storage: 17kB
+                                       ->  CTE Scan on ss ss2  (cost=0.00..36920.00 rows=37 width=64) (actual time=0.006..125.354 rows=1847.00 loops=1)
+                                             Filter: ((d_year = 2000) AND (d_qoy = 2))
+                                             Rows Removed by Filter: 36645
+                                             Storage: Memory  Maximum Storage: 2900kB
+               ->  CTE Scan on ws ws1  (cost=0.00..36920.00 rows=37 width=64) (actual time=3.714..5.392 rows=1843.00 loops=1846)
+                     Filter: ((d_qoy = 1) AND (d_year = 2000))
+                     Rows Removed by Filter: 35798
+                     Storage: Memory  Maximum Storage: 2847kB
+                     Buffers: shared hit=193648
+         ->  CTE Scan on ws ws2  (cost=0.00..36920.00 rows=37 width=64) (actual time=0.001..1.607 rows=1845.00 loops=1842)
+               Filter: ((d_year = 2000) AND (d_qoy = 2))
+               Rows Removed by Filter: 35796
+               Storage: Memory  Maximum Storage: 2847kB
+   ->  CTE Scan on ws ws3  (cost=0.00..36920.00 rows=37 width=64) (actual time=0.000..1.635 rows=1847.00 loops=930)
+         Filter: ((d_year = 2000) AND (d_qoy = 3))
+         Rows Removed by Filter: 35794
+         Storage: Memory  Maximum Storage: 2847kB
+ Planning:
+   Buffers: shared hit=309
+ Planning Time: 8.738 ms
+ JIT:
+   Functions: 301
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 38.769 ms (Deform 21.336 ms), Inlining 497.454 ms, Optimization 1599.850 ms, Emission 1076.244 ms, Total 3212.317 ms
+ Execution Time: 20326.762 ms
+(120 rows)
+

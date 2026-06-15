@@ -1,0 +1,91 @@
+                                                                                                               QUERY PLAN                                                                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4373934.91..4373935.16 rows=100 width=272) (actual time=654330.580..654393.055 rows=100.00 loops=1)
+   Buffers: shared hit=99840 read=3738344
+   ->  Sort  (cost=4373934.91..4373974.05 rows=15653 width=272) (actual time=652879.230..652941.505 rows=100.00 loops=1)
+         Sort Key: customer_address.ca_country NULLS FIRST, customer_address.ca_state NULLS FIRST, customer_address.ca_county NULLS FIRST, item.i_item_id NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 46kB
+         Buffers: shared hit=99840 read=3738344
+         ->  GroupAggregate  (cost=4372284.17..4373336.67 rows=15653 width=272) (actual time=651619.978..652744.205 rows=414975.00 loops=1)
+               Group Key: item.i_item_id, customer_address.ca_country, customer_address.ca_state, customer_address.ca_county
+               Group Key: item.i_item_id, customer_address.ca_country, customer_address.ca_state
+               Group Key: item.i_item_id, customer_address.ca_country
+               Group Key: item.i_item_id
+               Group Key: ()
+               Buffers: shared hit=99840 read=3738344
+               ->  Gather Merge  (cost=4372284.17..4372739.91 rows=3913 width=81) (actual time=651569.760..651667.051 rows=138805.00 loops=1)
+                     Workers Planned: 2
+                     Workers Launched: 0
+                     Buffers: shared hit=99840 read=3738344
+                     ->  Sort  (cost=4371284.15..4371288.23 rows=1630 width=81) (actual time=651566.999..651601.446 rows=138805.00 loops=1)
+                           Sort Key: item.i_item_id, customer_address.ca_country, customer_address.ca_state, customer_address.ca_county
+                           Sort Method: quicksort  Memory: 20375kB
+                           Buffers: shared hit=99840 read=3738344
+                           ->  Parallel Hash Join  (cost=4361815.18..4371197.19 rows=1630 width=81) (actual time=650288.024..650484.095 rows=138805.00 loops=1)
+                                 Hash Cond: (item.i_item_sk = catalog_sales.cs_item_sk)
+                                 Buffers: shared hit=99840 read=3738344
+                                 ->  Parallel Seq Scan on item  (cost=0.00..9058.00 rows=85000 width=21) (actual time=54.740..79.976 rows=204000.00 loops=1)
+                                       Buffers: shared hit=8208
+                                 ->  Parallel Hash  (cost=4361799.40..4361799.40 rows=1262 width=68) (actual time=650205.064..650215.449 rows=138805.00 loops=1)
+                                       Buckets: 262144 (originally 4096)  Batches: 1 (originally 1)  Memory Usage: 18752kB
+                                       Buffers: shared hit=91632 read=3738344
+                                       ->  Parallel Hash Join  (cost=4335535.65..4361799.40 rows=1262 width=68) (actual time=644101.498..650083.563 rows=138805.00 loops=1)
+                                             Hash Cond: (cd2.cd_demo_sk = customer.c_current_cdemo_sk)
+                                             Buffers: shared hit=91632 read=3738344
+                                             ->  Parallel Seq Scan on customer_demographics cd2  (cost=0.00..23936.13 rows=619613 width=4) (actual time=0.521..2846.028 rows=1920800.00 loops=1)
+                                                   Buffers: shared hit=17740
+                                             ->  Parallel Hash  (cost=4335519.29..4335519.29 rows=1309 width=72) (actual time=644051.380..644061.760 rows=141416.00 loops=1)
+                                                   Buckets: 262144 (originally 4096)  Batches: 1 (originally 1)  Memory Usage: 19360kB
+                                                   Buffers: shared hit=73892 read=3738344
+                                                   ->  Parallel Hash Join  (cost=4311826.64..4335519.29 rows=1309 width=72) (actual time=640641.634..643933.178 rows=141416.00 loops=1)
+                                                         Hash Cond: (customer_address.ca_address_sk = customer.c_current_addr_sk)
+                                                         Buffers: shared hit=73892 read=3738344
+                                                         ->  Parallel Seq Scan on customer_address  (cost=0.00..23480.39 rows=55731 width=35) (actual time=87.977..3235.932 rows=147307.00 loops=1)
+                                                               Filter: ((ca_state)::text = ANY ('{MS,IN,ND,OK,NM,VA,MS}'::text[]))
+                                                               Rows Removed by Filter: 852693
+                                                               Buffers: shared hit=17432
+                                                         ->  Parallel Hash  (cost=4311753.22..4311753.22 rows=5874 width=45) (actual time=640514.594..640524.402 rows=969700.00 loops=1)
+                                                               Buckets: 1048576 (originally 32768)  Batches: 1 (originally 1)  Memory Usage: 93664kB
+                                                               Buffers: shared hit=56460 read=3738344
+                                                               ->  Parallel Hash Join  (cost=4265086.43..4311753.22 rows=5874 width=45) (actual time=621694.761..639294.078 rows=969700.00 loops=1)
+                                                                     Hash Cond: (customer.c_customer_sk = catalog_sales.cs_bill_customer_sk)
+                                                                     Buffers: shared hit=56460 read=3738344
+                                                                     ->  Parallel Seq Scan on customer  (cost=0.00..45757.64 rows=238524 width=16) (actual time=584.633..8836.011 rows=958494.00 loops=1)
+                                                                           Filter: (c_birth_month = ANY ('{1,6,8,9,12,2}'::integer[]))
+                                                                           Rows Removed by Filter: 1041506
+                                                                           Buffers: shared hit=37008
+                                                                     ->  Parallel Hash  (cost=4264931.77..4264931.77 rows=12373 width=37) (actual time=621034.643..621044.447 rows=2029702.00 loops=1)
+                                                                           Buckets: 2097152 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 178208kB
+                                                                           Buffers: shared hit=19452 read=3738344
+                                                                           ->  Parallel Hash Join  (cost=29539.28..4264931.77 rows=12373 width=37) (actual time=5818.837..619223.293 rows=2029702.00 loops=1)
+                                                                                 Hash Cond: (catalog_sales.cs_bill_cdemo_sk = cd1.cd_demo_sk)
+                                                                                 Buffers: shared hit=19452 read=3738344
+                                                                                 ->  Parallel Hash Join  (cost=1963.80..4236649.12 rows=177935 width=37) (actual time=114.038..605330.485 rows=28503059.00 loops=1)
+                                                                                       Hash Cond: (catalog_sales.cs_sold_date_sk = date_dim.d_date_sk)
+                                                                                       Buffers: shared hit=1712 read=3738344
+                                                                                       ->  Parallel Seq Scan on catalog_sales  (cost=0.00..4098635.16 rows=36000316 width=41) (actual time=86.728..566236.487 rows=143997065.00 loops=1)
+                                                                                             Buffers: shared hit=288 read=3738344
+                                                                                       ->  Parallel Hash  (cost=1961.12..1961.12 rows=214 width=4) (actual time=27.234..27.925 rows=365.00 loops=1)
+                                                                                             Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                                             Buffers: shared hit=1424
+                                                                                             ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=214 width=4) (actual time=13.621..27.766 rows=365.00 loops=1)
+                                                                                                   Filter: (d_year = 1998)
+                                                                                                   Rows Removed by Filter: 72684
+                                                                                                   Buffers: shared hit=1424
+                                                                                 ->  Parallel Hash  (cost=27034.19..27034.19 rows=43303 width=8) (actual time=5654.421..5659.800 rows=137200.00 loops=1)
+                                                                                       Buckets: 262144  Batches: 1  Memory Usage: 7424kB
+                                                                                       Buffers: shared hit=17740
+                                                                                       ->  Parallel Seq Scan on customer_demographics cd1  (cost=0.00..27034.19 rows=43303 width=8) (actual time=0.258..5573.712 rows=137200.00 loops=1)
+                                                                                             Filter: (((cd_gender)::text = 'F'::text) AND ((cd_education_status)::text = 'Unknown'::text))
+                                                                                             Rows Removed by Filter: 1783600
+                                                                                             Buffers: shared hit=17740
+ Planning:
+   Buffers: shared hit=343 read=3
+ Planning Time: 89.342 ms
+ JIT:
+   Functions: 68
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 13.063 ms (Deform 6.375 ms), Inlining 318.927 ms, Optimization 661.201 ms, Emission 1095.834 ms, Total 2089.024 ms
+ Execution Time: 655648.379 ms
+(87 rows)
+

@@ -1,0 +1,53 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=6604408.23..6604408.33 rows=40 width=83) (actual time=29615.447..29722.677 rows=167.00 loops=1)
+   Sort Key: (sum(ss.ss_net_profit)) DESC
+   Sort Method: quicksort  Memory: 35kB
+   Buffers: shared hit=19463 read=5155041
+   ->  Finalize GroupAggregate  (cost=6604384.21..6604407.17 rows=40 width=83) (actual time=29613.886..29722.177 rows=167.00 loops=1)
+         Group Key: s.s_store_name, s.s_state, s.s_tax_percentage
+         Buffers: shared hit=19463 read=5155041
+         ->  Gather Merge  (cost=6604384.21..6604403.37 rows=160 width=83) (actual time=29613.856..29721.504 rows=835.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 4
+               Buffers: shared hit=19463 read=5155041
+               ->  Sort  (cost=6603384.15..6603384.25 rows=40 width=83) (actual time=29581.590..29581.605 rows=167.00 loops=5)
+                     Sort Key: s.s_store_name, s.s_state, s.s_tax_percentage
+                     Sort Method: quicksort  Memory: 53kB
+                     Buffers: shared hit=19463 read=5155041
+                     Worker 0:  Sort Method: quicksort  Memory: 53kB
+                     Worker 1:  Sort Method: quicksort  Memory: 53kB
+                     Worker 2:  Sort Method: quicksort  Memory: 53kB
+                     Worker 3:  Sort Method: quicksort  Memory: 53kB
+                     ->  Partial HashAggregate  (cost=6603382.49..6603383.09 rows=40 width=83) (actual time=29581.294..29581.387 rows=167.00 loops=5)
+                           Group Key: s.s_store_name, s.s_state, s.s_tax_percentage
+                           Batches: 1  Memory Usage: 168kB
+                           Buffers: shared hit=19403 read=5155041
+                           Worker 0:  Batches: 1  Memory Usage: 168kB
+                           Worker 1:  Batches: 1  Memory Usage: 168kB
+                           Worker 2:  Batches: 1  Memory Usage: 168kB
+                           Worker 3:  Batches: 1  Memory Usage: 168kB
+                           ->  Hash Join  (cost=29.67..6331945.52 rows=18095798 width=27) (actual time=591.700..23727.269 rows=14642455.60 loops=5)
+                                 Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                 Buffers: shared hit=19403 read=5155041
+                                 ->  Parallel Seq Scan on store_sales ss  (cost=0.00..6074360.50 rows=20425963 width=20) (actual time=591.262..20521.859 rows=16290983.00 loops=5)
+                                       Filter: (ss_sales_price > '50'::numeric)
+                                       Rows Removed by Filter: 41308422
+                                       Buffers: shared hit=19303 read=5155041
+                                 ->  Hash  (cost=25.02..25.02 rows=372 width=15) (actual time=0.415..0.417 rows=372.00 loops=5)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 27kB
+                                       Buffers: shared hit=100
+                                       ->  Seq Scan on store s  (cost=0.00..25.02 rows=372 width=15) (actual time=0.088..0.360 rows=372.00 loops=5)
+                                             Filter: (s_tax_percentage > '0'::numeric)
+                                             Rows Removed by Filter: 30
+                                             Buffers: shared hit=100
+ Planning:
+   Buffers: shared hit=221
+ Planning Time: 2.640 ms
+ JIT:
+   Functions: 113
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 13.261 ms (Deform 8.535 ms), Inlining 433.497 ms, Optimization 1658.849 ms, Emission 861.112 ms, Total 2966.719 ms
+ Execution Time: 29761.123 ms
+(49 rows)
+

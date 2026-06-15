@@ -1,0 +1,65 @@
+                                                                                       QUERY PLAN                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=94461.64..94954.58 rows=100 width=145) (actual time=581.612..603.943 rows=100.00 loops=1)
+   Buffers: shared hit=58174 read=15692
+   ->  GroupAggregate  (cost=94461.64..95314.43 rows=173 width=145) (actual time=581.610..603.929 rows=100.00 loops=1)
+         Group Key: item.i_item_id
+         Buffers: shared hit=58174 read=15692
+         ->  Nested Loop  (cost=94461.64..95308.80 rows=173 width=36) (actual time=581.388..603.668 rows=142.00 loops=1)
+               Join Filter: (store_sales.ss_promo_sk = promotion.p_promo_sk)
+               Rows Removed by Join Filter: 42447
+               Buffers: shared hit=58174 read=15692
+               ->  Gather Merge  (cost=94461.64..94483.05 rows=181 width=40) (actual time=581.310..597.658 rows=143.00 loops=1)
+                     Workers Planned: 3
+                     Workers Launched: 3
+                     Buffers: shared hit=58168 read=15692
+                     ->  Sort  (cost=93461.60..93461.75 rows=58 width=40) (actual time=569.656..569.942 rows=681.00 loops=4)
+                           Sort Key: item.i_item_id
+                           Sort Method: quicksort  Memory: 161kB
+                           Buffers: shared hit=58168 read=15692
+                           Worker 0:  Sort Method: quicksort  Memory: 237kB
+                           Worker 1:  Sort Method: quicksort  Memory: 160kB
+                           Worker 2:  Sort Method: quicksort  Memory: 233kB
+                           ->  Hash Join  (cost=64843.21..93459.90 rows=58 width=40) (actual time=424.593..567.729 rows=1971.25 loops=4)
+                                 Hash Cond: (store_sales.ss_item_sk = item.i_item_sk)
+                                 Buffers: shared hit=58144 read=15692
+                                 ->  Parallel Hash Join  (cost=63718.21..92334.10 rows=58 width=27) (actual time=413.724..554.919 rows=1971.25 loops=4)
+                                       Hash Cond: (customer_demographics.cd_demo_sk = store_sales.ss_cdemo_sk)
+                                       Buffers: shared hit=55264 read=15692
+                                       ->  Parallel Seq Scan on customer_demographics  (cost=0.00..28583.23 rows=8673 width=4) (actual time=0.364..141.723 rows=6860.00 loops=4)
+                                             Filter: (((cd_gender)::text = 'M'::text) AND ((cd_marital_status)::text = 'S'::text) AND ((cd_education_status)::text = 'College'::text))
+                                             Rows Removed by Filter: 473340
+                                             Buffers: shared hit=2048 read=15692
+                                       ->  Parallel Hash  (cost=63675.78..63675.78 rows=3394 width=31) (actual time=408.638..408.880 rows=138492.50 loops=4)
+                                             Buckets: 1048576 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 54048kB
+                                             Buffers: shared hit=53216
+                                             ->  Parallel Hash Join  (cost=1963.79..63675.78 rows=3394 width=31) (actual time=3.112..288.608 rows=138492.50 loops=4)
+                                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=53216
+                                                   ->  Parallel Seq Scan on store_sales  (cost=0.00..58992.01 rows=720002 width=35) (actual time=0.025..105.836 rows=720101.00 loops=4)
+                                                         Buffers: shared hit=51792
+                                                   ->  Parallel Hash  (cost=1961.12..1961.12 rows=213 width=4) (actual time=3.056..3.057 rows=91.50 loops=4)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=213 width=4) (actual time=6.712..12.165 rows=366.00 loops=1)
+                                                               Filter: (d_year = 2000)
+                                                               Rows Removed by Filter: 72683
+                                                               Buffers: shared hit=1424
+                                 ->  Hash  (cost=900.00..900.00 rows=18000 width=21) (actual time=10.436..10.437 rows=18000.00 loops=4)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1241kB
+                                       Buffers: shared hit=2880
+                                       ->  Seq Scan on item  (cost=0.00..900.00 rows=18000 width=21) (actual time=0.046..5.677 rows=18000.00 loops=4)
+                                             Buffers: shared hit=2880
+               ->  Materialize  (cost=0.00..12.00 rows=300 width=4) (actual time=0.000..0.018 rows=297.83 loops=143)
+                     Storage: Memory  Maximum Storage: 26kB
+                     Buffers: shared hit=6
+                     ->  Seq Scan on promotion  (cost=0.00..10.50 rows=300 width=4) (actual time=0.044..0.161 rows=299.00 loops=1)
+                           Filter: (((p_channel_email)::text = 'N'::text) OR ((p_channel_event)::text = 'N'::text))
+                           Rows Removed by Filter: 1
+                           Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=257
+ Planning Time: 3.258 ms
+ Execution Time: 604.287 ms
+(61 rows)
+

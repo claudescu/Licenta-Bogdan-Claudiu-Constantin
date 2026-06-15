@@ -1,0 +1,80 @@
+                                                                                            QUERY PLAN                                                                                             
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=780880.49..780897.71 rows=200 width=134) (actual time=6769.129..6769.175 rows=200.00 loops=1)
+   Buffers: shared hit=56741
+   ->  Incremental Sort  (cost=780880.49..995562.82 rows=2493141 width=134) (actual time=6056.427..6056.458 rows=200.00 loops=1)
+         Sort Key: brand_reg.i_category, brand_reg.s_state, brand_reg.d_year, (rank() OVER w1)
+         Presorted Key: brand_reg.i_category, brand_reg.s_state, brand_reg.d_year
+         Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 33kB  Peak Memory: 33kB
+         Pre-sorted Groups: 1  Sort Method: top-N heapsort  Average Memory: 51kB  Peak Memory: 51kB
+         Buffers: shared hit=56741
+         ->  WindowAgg  (cost=780879.77..918002.10 rows=2493141 width=134) (actual time=6048.142..6055.020 rows=4710.00 loops=1)
+               Window: w2 AS (PARTITION BY brand_reg.i_category, brand_reg.s_state, brand_reg.d_year)
+               Storage: Memory  Maximum Storage: 413kB
+               Buffers: shared hit=56732
+               ->  WindowAgg  (cost=780879.37..843207.87 rows=2493141 width=70) (actual time=6042.997..6049.640 rows=9382.00 loops=1)
+                     Window: w1 AS (PARTITION BY brand_reg.i_category, brand_reg.s_state, brand_reg.d_year ORDER BY brand_reg.total_vanzari ROWS UNBOUNDED PRECEDING)
+                     Storage: Memory  Maximum Storage: 17kB
+                     Buffers: shared hit=56732
+                     ->  Sort  (cost=780879.34..787112.19 rows=2493141 width=62) (actual time=6042.949..6044.664 rows=9382.00 loops=1)
+                           Sort Key: brand_reg.i_category, brand_reg.s_state, brand_reg.d_year, brand_reg.total_vanzari DESC
+                           Sort Method: quicksort  Memory: 17145kB
+                           Buffers: shared hit=56732
+                           ->  Subquery Scan on brand_reg  (cost=366034.83..461085.83 rows=2493141 width=62) (actual time=5306.008..5448.797 rows=185602.00 loops=1)
+                                 Buffers: shared hit=56729
+                                 ->  HashAggregate  (cost=366034.83..436154.42 rows=2493141 width=65) (actual time=5306.003..5434.164 rows=185602.00 loops=1)
+                                       Group Key: i.i_brand, i.i_category, s.s_state, ca.ca_state, d.d_year
+                                       Planned Partitions: 8  Batches: 1  Memory Usage: 81945kB
+                                       Buffers: shared hit=56729
+                                       ->  Hash Join  (cost=11735.87..235924.03 rows=2493141 width=39) (actual time=102.966..3104.096 rows=2653509.00 loops=1)
+                                             Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                             Buffers: shared hit=56729
+                                             ->  Hash Join  (cost=10610.87..200518.35 rows=2493141 width=20) (actual time=92.281..2446.641 rows=2653509.00 loops=1)
+                                                   Hash Cond: (ss.ss_customer_sk = c.c_customer_sk)
+                                                   Buffers: shared hit=56009
+                                                   ->  Hash Join  (cost=3068.87..158251.37 rows=2611621 width=21) (actual time=21.544..1852.217 rows=2686024.00 loops=1)
+                                                         Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                                         Buffers: shared hit=53217
+                                                         ->  Hash Join  (cost=3067.60..121859.10 rows=2739942 width=22) (actual time=21.477..1449.532 rows=2750554.00 loops=1)
+                                                               Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                                               Buffers: shared hit=53216
+                                                               ->  Seq Scan on store_sales ss  (cost=0.00..80592.06 rows=2880006 width=22) (actual time=0.011..276.525 rows=2880404.00 loops=1)
+                                                                     Buffers: shared hit=51792
+                                                               ->  Hash  (cost=2154.49..2154.49 rows=73049 width=8) (actual time=20.846..20.848 rows=73049.00 loops=1)
+                                                                     Buckets: 131072  Batches: 1  Memory Usage: 3878kB
+                                                                     Buffers: shared hit=1424
+                                                                     ->  Seq Scan on date_dim d  (cost=0.00..2154.49 rows=73049 width=8) (actual time=0.018..10.691 rows=73049.00 loops=1)
+                                                                           Buffers: shared hit=1424
+                                                         ->  Hash  (cost=1.12..1.12 rows=12 width=7) (actual time=0.055..0.056 rows=12.00 loops=1)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               Buffers: shared hit=1
+                                                               ->  Seq Scan on store s  (cost=0.00..1.12 rows=12 width=7) (actual time=0.042..0.045 rows=12.00 loops=1)
+                                                                     Buffers: shared hit=1
+                                                   ->  Hash  (cost=6292.00..6292.00 rows=100000 width=7) (actual time=70.085..70.088 rows=100000.00 loops=1)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 4824kB
+                                                         Buffers: shared hit=2792
+                                                         ->  Hash Join  (cost=2045.00..6292.00 rows=100000 width=7) (actual time=16.030..54.101 rows=100000.00 loops=1)
+                                                               Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                                               Buffers: shared hit=2792
+                                                               ->  Seq Scan on customer c  (cost=0.00..2872.00 rows=100000 width=8) (actual time=0.018..6.935 rows=100000.00 loops=1)
+                                                                     Buffers: shared hit=1872
+                                                               ->  Hash  (cost=1420.00..1420.00 rows=50000 width=7) (actual time=15.690..15.692 rows=50000.00 loops=1)
+                                                                     Buckets: 65536  Batches: 1  Memory Usage: 2460kB
+                                                                     Buffers: shared hit=920
+                                                                     ->  Seq Scan on customer_address ca  (cost=0.00..1420.00 rows=50000 width=7) (actual time=0.013..8.882 rows=50000.00 loops=1)
+                                                                           Buffers: shared hit=920
+                                             ->  Hash  (cost=900.00..900.00 rows=18000 width=27) (actual time=10.537..10.538 rows=18000.00 loops=1)
+                                                   Buckets: 32768  Batches: 1  Memory Usage: 1338kB
+                                                   Buffers: shared hit=720
+                                                   ->  Seq Scan on item i  (cost=0.00..900.00 rows=18000 width=27) (actual time=0.035..7.578 rows=18000.00 loops=1)
+                                                         Buffers: shared hit=720
+ Planning:
+   Buffers: shared hit=192
+ Planning Time: 1.854 ms
+ JIT:
+   Functions: 64
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 4.659 ms (Deform 2.387 ms), Inlining 91.562 ms, Optimization 368.522 ms, Emission 252.780 ms, Total 717.524 ms
+ Execution Time: 6814.089 ms
+(76 rows)
+

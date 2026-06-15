@@ -1,0 +1,77 @@
+                                                                                                          QUERY PLAN                                                                                                          
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=553785.09..553791.28 rows=6 width=152) (actual time=29996.548..30002.430 rows=1074.00 loops=1)
+   Sort Key: inv1.w_warehouse_sk NULLS FIRST, inv1.i_item_sk NULLS FIRST, inv1.mean NULLS FIRST, inv1.cov NULLS FIRST, inv2.mean NULLS FIRST, inv2.cov NULLS FIRST
+   Presorted Key: inv1.w_warehouse_sk, inv1.i_item_sk
+   Full-sort Groups: 34  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+   Buffers: shared hit=1427 read=308721, temp read=62526 written=106809
+   CTE inv
+     ->  Subquery Scan on foo  (cost=541746.21..549508.31 rows=94086 width=125) (actual time=22401.444..29885.054 rows=162247.00 loops=1)
+           Buffers: shared hit=1424 read=308721, temp read=62526 written=106809
+           ->  HashAggregate  (cost=541746.21..549037.88 rows=94086 width=93) (actual time=22401.414..29842.839 rows=162247.00 loops=1)
+                 Group Key: warehouse.w_warehouse_name, warehouse.w_warehouse_sk, item.i_item_sk, date_dim.d_moy
+                 Filter: (CASE avg(inventory.inv_quantity_on_hand) WHEN '0'::numeric THEN '0'::numeric ELSE ((stddev_samp(inventory.inv_quantity_on_hand) * 1.000) / avg(inventory.inv_quantity_on_hand)) END > '1'::numeric)
+                 Batches: 21  Memory Usage: 131137kB  Disk Usage: 474312kB
+                 Rows Removed by Filter: 2441837
+                 Buffers: shared hit=1424 read=308721, temp read=62526 written=106809
+                 ->  Gather  (cost=6297.55..537512.34 rows=282258 width=33) (actual time=6284.446..16890.073 rows=11284364.00 loops=1)
+                       Workers Planned: 4
+                       Workers Launched: 0
+                       Buffers: shared hit=1424 read=308721
+                       ->  Hash Join  (cost=5297.55..508286.54 rows=70564 width=33) (actual time=6282.688..16092.560 rows=11284364.00 loops=1)
+                             Hash Cond: (inventory.inv_warehouse_sk = warehouse.w_warehouse_sk)
+                             Buffers: shared hit=1424 read=308721
+                             ->  Parallel Hash Join  (cost=5296.39..507315.13 rows=70564 width=16) (actual time=5383.406..13794.135 rows=11284364.00 loops=1)
+                                   Hash Cond: (inventory.inv_item_sk = item.i_item_sk)
+                                   Buffers: shared hit=1424 read=308720
+                                   ->  Parallel Hash Join  (cost=1963.80..503302.83 rows=70564 width=16) (actual time=5060.590..10092.266 rows=11284364.00 loops=1)
+                                         Hash Cond: (inventory.inv_date_sk = date_dim.d_date_sk)
+                                         Buffers: shared hit=1424 read=306208
+                                         ->  Parallel Seq Scan on inventory  (cost=0.00..447819.76 rows=14161176 width=16) (actual time=1.764..4491.692 rows=56638827.00 loops=1)
+                                               Buffers: shared read=306208
+                                         ->  Parallel Hash  (cost=1961.12..1961.12 rows=214 width=8) (actual time=7.544..7.553 rows=365.00 loops=1)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                               Buffers: shared hit=1424
+                                               ->  Parallel Seq Scan on date_dim  (cost=0.00..1961.12 rows=214 width=8) (actual time=3.807..7.465 rows=365.00 loops=1)
+                                                     Filter: (d_year = 2001)
+                                                     Rows Removed by Filter: 72684
+                                                     Buffers: shared hit=1424
+                                   ->  Parallel Hash  (cost=2876.71..2876.71 rows=36471 width=4) (actual time=322.056..322.057 rows=62000.00 loops=1)
+                                         Buckets: 65536  Batches: 1  Memory Usage: 2944kB
+                                         Buffers: shared read=2512
+                                         ->  Parallel Seq Scan on item  (cost=0.00..2876.71 rows=36471 width=4) (actual time=1.838..298.193 rows=62000.00 loops=1)
+                                               Buffers: shared read=2512
+                             ->  Hash  (cost=1.07..1.07 rows=7 width=21) (actual time=899.245..899.246 rows=7.00 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                   Buffers: shared read=1
+                                   ->  Seq Scan on warehouse  (cost=0.00..1.07 rows=7 width=21) (actual time=899.212..899.217 rows=7.00 loops=1)
+                                         Buffers: shared read=1
+   ->  Merge Join  (cost=4275.59..4282.70 rows=6 width=152) (actual time=29996.304..30001.229 rows=1074.00 loops=1)
+         Merge Cond: ((inv1.w_warehouse_sk = inv2.w_warehouse_sk) AND (inv1.i_item_sk = inv2.i_item_sk))
+         Buffers: shared hit=1424 read=308721, temp read=62526 written=106809
+         ->  Sort  (cost=2137.79..2138.97 rows=470 width=76) (actual time=29981.092..29982.637 rows=15039.00 loops=1)
+               Sort Key: inv1.w_warehouse_sk NULLS FIRST, inv1.i_item_sk NULLS FIRST
+               Sort Method: quicksort  Memory: 1107kB
+               Buffers: shared hit=1424 read=308721, temp read=62526 written=106809
+               ->  CTE Scan on inv inv1  (cost=0.00..2116.93 rows=470 width=76) (actual time=22401.454..29973.297 rows=15039.00 loops=1)
+                     Filter: (d_moy = 1)
+                     Rows Removed by Filter: 147208
+                     Storage: Memory  Maximum Storage: 16140kB
+                     Buffers: shared hit=1424 read=308721, temp read=62526 written=106809
+         ->  Sort  (cost=2137.79..2138.97 rows=470 width=76) (actual time=15.106..16.098 rows=15349.00 loops=1)
+               Sort Key: inv2.w_warehouse_sk NULLS FIRST, inv2.i_item_sk NULLS FIRST
+               Sort Method: quicksort  Memory: 1123kB
+               ->  CTE Scan on inv inv2  (cost=0.00..2116.93 rows=470 width=76) (actual time=0.009..8.904 rows=15351.00 loops=1)
+                     Filter: (d_moy = 2)
+                     Rows Removed by Filter: 146896
+                     Storage: Memory  Maximum Storage: 16140kB
+ Planning:
+   Buffers: shared hit=153 read=14
+ Planning Time: 52.309 ms
+ JIT:
+   Functions: 60
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 22.984 ms (Deform 2.606 ms), Inlining 304.139 ms, Optimization 415.973 ms, Emission 224.885 ms, Total 967.981 ms
+ Execution Time: 30357.451 ms
+(73 rows)
+

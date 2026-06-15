@@ -1,0 +1,66 @@
+                                                                                             QUERY PLAN                                                                                             
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6197608.18..6197608.43 rows=100 width=95) (actual time=43969.461..43970.938 rows=100.00 loops=1)
+   Buffers: shared hit=81198 read=5102913, temp read=182300 written=182336
+   ->  Sort  (cost=6197608.18..6197625.98 rows=7120 width=95) (actual time=43495.350..43496.819 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_profit)) DESC
+         Sort Method: top-N heapsort  Memory: 50kB
+         Buffers: shared hit=81198 read=5102913, temp read=182300 written=182336
+         ->  Finalize GroupAggregate  (cost=6191596.93..6197336.05 rows=7120 width=95) (actual time=37844.171..43496.045 rows=642.00 loops=1)
+               Group Key: i.i_category, i.i_brand
+               Buffers: shared hit=81195 read=5102913, temp read=182300 written=182336
+               ->  Gather Merge  (cost=6191596.93..6196730.85 rows=28480 width=95) (actual time=37836.692..43493.811 rows=3210.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=81195 read=5102913, temp read=182300 written=182336
+                     ->  Partial GroupAggregate  (cost=6190596.87..6192338.55 rows=7120 width=95) (actual time=37234.380..40502.646 rows=642.00 loops=5)
+                           Group Key: i.i_category, i.i_brand
+                           Buffers: shared hit=81195 read=5102913, temp read=182300 written=182336
+                           ->  Sort  (cost=6190596.87..6190869.35 rows=108992 width=35) (actual time=37232.081..39346.812 rows=6248985.80 loops=5)
+                                 Sort Key: i.i_category, i.i_brand
+                                 Sort Method: external merge  Disk: 297648kB
+                                 Buffers: shared hit=81195 read=5102913, temp read=182300 written=182336
+                                 Worker 0:  Sort Method: external merge  Disk: 297616kB
+                                 Worker 1:  Sort Method: external merge  Disk: 289768kB
+                                 Worker 2:  Sort Method: external merge  Disk: 275744kB
+                                 Worker 3:  Sort Method: external merge  Disk: 297624kB
+                                 ->  Hash Join  (cost=11830.01..6181477.59 rows=108992 width=35) (actual time=698.595..28808.420 rows=6248985.80 loops=5)
+                                       Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                       Buffers: shared hit=81163 read=5102913
+                                       ->  Parallel Hash Join  (cost=11800.96..6179931.70 rows=113846 width=39) (actual time=344.905..27293.685 rows=6400044.20 loops=5)
+                                             Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                             Buffers: shared hit=81063 read=5102913
+                                             ->  Parallel Hash Join  (cost=1963.80..6168339.42 rows=341538 width=20) (actual time=315.448..22449.473 rows=10945726.00 loops=5)
+                                                   Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                                   Buffers: shared hit=72855 read=5102913
+                                                   ->  Parallel Seq Scan on store_sales ss  (cost=0.00..5894357.20 rows=72001320 width=24) (actual time=41.115..14716.426 rows=57599404.80 loops=5)
+                                                         Buffers: shared hit=71431 read=5102913
+                                                   ->  Parallel Hash  (cost=1961.12..1961.12 rows=214 width=4) (actual time=269.533..269.536 rows=73.00 loops=5)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim d  (cost=0.00..1961.12 rows=214 width=4) (actual time=245.131..265.736 rows=73.00 loops=5)
+                                                               Filter: (d_year = 2001)
+                                                               Rows Removed by Filter: 14537
+                                                               Buffers: shared hit=1424
+                                             ->  Parallel Hash  (cost=9483.00..9483.00 rows=28333 width=27) (actual time=28.827..28.828 rows=24141.80 loops=5)
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 8576kB
+                                                   Buffers: shared hit=8208
+                                                   ->  Parallel Seq Scan on item i  (cost=0.00..9483.00 rows=28333 width=27) (actual time=0.047..107.493 rows=120709.00 loops=1)
+                                                         Filter: (i_current_price > (i_wholesale_cost * 1.5))
+                                                         Rows Removed by Filter: 83291
+                                                         Buffers: shared hit=8208
+                                       ->  Hash  (cost=24.02..24.02 rows=402 width=4) (actual time=353.643..353.644 rows=402.00 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 23kB
+                                             Buffers: shared hit=100
+                                             ->  Seq Scan on store s  (cost=0.00..24.02 rows=402 width=4) (actual time=353.365..353.568 rows=402.00 loops=5)
+                                                   Buffers: shared hit=100
+ Planning:
+   Buffers: shared hit=241
+ Planning Time: 2.050 ms
+ JIT:
+   Functions: 174
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 15.820 ms (Deform 7.766 ms), Inlining 495.242 ms, Optimization 1140.708 ms, Emission 605.601 ms, Total 2257.371 ms
+ Execution Time: 44057.272 ms
+(62 rows)
+

@@ -1,0 +1,52 @@
+                                                                                                                            QUERY PLAN                                                                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=26781.45..26781.70 rows=100 width=122) (actual time=104.698..110.021 rows=100.00 loops=1)
+   Buffers: shared hit=23140
+   ->  Sort  (cost=26781.45..26783.95 rows=1001 width=122) (actual time=104.696..110.012 rows=100.00 loops=1)
+         Sort Key: ((GROUPING(item.i_category) + GROUPING(item.i_class))) DESC, (CASE WHEN (((GROUPING(item.i_category) + GROUPING(item.i_class))) = 0) THEN item.i_category ELSE NULL::character varying END) NULLS FIRST, (rank() OVER w1) NULLS FIRST
+         Sort Method: quicksort  Memory: 39kB
+         Buffers: shared hit=23140
+         ->  WindowAgg  (cost=26698.15..26743.19 rows=1001 width=122) (actual time=104.385..109.774 rows=133.00 loops=1)
+               Window: w1 AS (PARTITION BY ((GROUPING(item.i_category) + GROUPING(item.i_class))), (CASE WHEN (GROUPING(item.i_class) = 0) THEN item.i_category ELSE NULL::character varying END) ORDER BY (sum(web_sales.ws_net_paid)) ROWS UNBOUNDED PRECEDING)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=23131
+               ->  Sort  (cost=26698.15..26700.65 rows=1001 width=90) (actual time=104.367..109.684 rows=133.00 loops=1)
+                     Sort Key: ((GROUPING(item.i_category) + GROUPING(item.i_class))), (CASE WHEN (GROUPING(item.i_class) = 0) THEN item.i_category ELSE NULL::character varying END), (sum(web_sales.ws_net_paid)) DESC
+                     Sort Method: quicksort  Memory: 33kB
+                     Buffers: shared hit=23131
+                     ->  MixedAggregate  (cost=4196.08..26648.26 rows=1001 width=90) (actual time=104.166..109.518 rows=133.00 loops=1)
+                           Hash Key: item.i_category, item.i_class
+                           Hash Key: item.i_category
+                           Group Key: ()
+                           Batches: 1  Memory Usage: 129kB
+                           Buffers: shared hit=23128
+                           ->  Gather  (cost=4196.08..26567.49 rows=3383 width=20) (actual time=17.026..49.284 rows=142180.00 loops=1)
+                                 Workers Planned: 3
+                                 Workers Launched: 3
+                                 Buffers: shared hit=23128
+                                 ->  Hash Join  (cost=3196.08..25229.19 rows=1091 width=20) (actual time=11.852..72.112 rows=35545.00 loops=4)
+                                       Hash Cond: (web_sales.ws_item_sk = item.i_item_sk)
+                                       Buffers: shared hit=23128
+                                       ->  Parallel Hash Join  (cost=2071.08..24089.18 rows=1091 width=10) (actual time=1.999..52.781 rows=35545.00 loops=4)
+                                             Hash Cond: (web_sales.ws_sold_date_sk = d1.d_date_sk)
+                                             Buffers: shared hit=20248
+                                             ->  Parallel Seq Scan on web_sales  (cost=0.00..21142.33 rows=231833 width=14) (actual time=0.016..17.457 rows=179846.00 loops=4)
+                                                   Buffers: shared hit=18824
+                                             ->  Parallel Hash  (cost=2068.55..2068.55 rows=202 width=4) (actual time=1.857..1.858 rows=91.50 loops=4)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                   Buffers: shared hit=1424
+                                                   ->  Parallel Seq Scan on date_dim d1  (cost=0.00..2068.55 rows=202 width=4) (actual time=3.480..7.313 rows=366.00 loops=1)
+                                                         Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                         Rows Removed by Filter: 72683
+                                                         Buffers: shared hit=1424
+                                       ->  Hash  (cost=900.00..900.00 rows=18000 width=18) (actual time=9.630..9.630 rows=18000.00 loops=4)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 1191kB
+                                             Buffers: shared hit=2880
+                                             ->  Seq Scan on item  (cost=0.00..900.00 rows=18000 width=18) (actual time=0.047..5.533 rows=18000.00 loops=4)
+                                                   Buffers: shared hit=2880
+ Planning:
+   Buffers: shared hit=151
+ Planning Time: 1.427 ms
+ Execution Time: 110.251 ms
+(48 rows)
+

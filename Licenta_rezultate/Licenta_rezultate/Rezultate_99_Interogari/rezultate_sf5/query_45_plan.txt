@@ -1,0 +1,69 @@
+                                                                                                                 QUERY PLAN                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=125668.06..125681.45 rows=100 width=47) (actual time=588.257..606.333 rows=32.00 loops=1)
+   Buffers: shared hit=109560
+   ->  GroupAggregate  (cost=125668.06..125981.68 rows=2341 width=47) (actual time=562.919..580.992 rows=32.00 loops=1)
+         Group Key: customer_address.ca_zip, customer_address.ca_city
+         Buffers: shared hit=109560
+         ->  Gather Merge  (cost=125668.06..125934.86 rows=2341 width=21) (actual time=562.891..580.949 rows=32.00 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=109560
+               ->  Sort  (cost=124668.05..124671.49 rows=1377 width=21) (actual time=546.881..547.049 rows=16.00 loops=2)
+                     Sort Key: customer_address.ca_zip, customer_address.ca_city
+                     Sort Method: quicksort  Memory: 26kB
+                     Buffers: shared hit=109560
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Parallel Hash Join  (cost=121936.47..124596.25 rows=1377 width=21) (actual time=536.545..547.017 rows=16.00 loops=2)
+                           Hash Cond: (item.i_item_sk = web_sales.ws_item_sk)
+                           Join Filter: (("substring"((customer_address.ca_zip)::text, 1, 5) = ANY ('{85669,86197,88274,83405,86475,85392,85460,80348,81792}'::text[])) OR (ANY ((item.i_item_id)::text = ((hashed SubPlan 1).col1)::text)))
+                           Rows Removed by Join Filter: 53160
+                           Buffers: shared hit=109552
+                           ->  Parallel Seq Scan on item  (cost=0.00..2509.65 rows=31765 width=21) (actual time=0.006..2.040 rows=27000.00 loops=2)
+                                 Buffers: shared hit=2192
+                           ->  Parallel Hash  (cost=118901.45..118901.45 rows=2636 width=25) (actual time=513.683..513.848 rows=53175.50 loops=2)
+                                 Buckets: 131072 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 8608kB
+                                 Buffers: shared hit=102976
+                                 ->  Parallel Hash Join  (cost=115318.29..118901.45 rows=2636 width=25) (actual time=461.914..496.797 rows=53175.50 loops=2)
+                                       Hash Cond: (customer_address.ca_address_sk = customer.c_current_addr_sk)
+                                       Buffers: shared hit=102976
+                                       ->  Parallel Seq Scan on customer_address  (cost=0.00..3267.76 rows=81176 width=19) (actual time=0.033..12.167 rows=69000.00 loops=2)
+                                             Buffers: shared hit=2456
+                                       ->  Parallel Hash  (cost=115294.95..115294.95 rows=1867 width=14) (actual time=461.805..461.969 rows=53175.50 loops=2)
+                                             Buckets: 131072 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 6976kB
+                                             Buffers: shared hit=100520
+                                             ->  Parallel Hash Join  (cost=108423.03..115294.95 rows=1867 width=14) (actual time=412.432..450.237 rows=53175.50 loops=2)
+                                                   Hash Cond: (customer.c_customer_sk = web_sales.ws_bill_customer_sk)
+                                                   Buffers: shared hit=100520
+                                                   ->  Parallel Seq Scan on customer  (cost=0.00..6290.17 rows=115417 width=8) (actual time=0.005..10.981 rows=138500.00 loops=2)
+                                                         Buffers: shared hit=5136
+                                                   ->  Parallel Hash  (cost=108409.03..108409.03 rows=1120 width=14) (actual time=412.335..412.496 rows=53180.00 loops=2)
+                                                         Buckets: 131072 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 7008kB
+                                                         Buffers: shared hit=95384
+                                                         ->  Parallel Hash Join  (cost=2069.23..108409.03 rows=1120 width=14) (actual time=17.420..391.958 rows=53180.00 loops=2)
+                                                               Hash Cond: (web_sales.ws_sold_date_sk = date_dim.d_date_sk)
+                                                               Buffers: shared hit=95384
+                                                               ->  Parallel Seq Scan on web_sales  (cost=0.00..102958.66 rows=899866 width=18) (actual time=0.019..148.953 rows=1799751.50 loops=2)
+                                                                     Buffers: shared hit=93960
+                                                               ->  Parallel Hash  (cost=2068.55..2068.55 rows=54 width=4) (actual time=5.039..5.040 rows=45.50 loops=2)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                     Buffers: shared hit=1424
+                                                                     ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=54 width=4) (actual time=5.517..10.050 rows=91.00 loops=1)
+                                                                           Filter: ((d_qoy = 2) AND (d_year = 2001))
+                                                                           Rows Removed by Filter: 72958
+                                                                           Buffers: shared hit=1424
+                           SubPlan 1
+                             ->  Seq Scan on item item_1  (cost=0.03..3002.03 rows=10 width=17) (actual time=0.192..10.038 rows=10.00 loops=2)
+                                   Filter: (i_item_sk = ANY ('{2,3,5,7,11,13,17,19,23,29}'::integer[]))
+                                   Rows Removed by Filter: 53990
+                                   Buffers: shared hit=4384
+ Planning:
+   Buffers: shared hit=321
+ Planning Time: 1.423 ms
+ JIT:
+   Functions: 116
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 5.100 ms (Deform 2.564 ms), Inlining 0.000 ms, Optimization 2.304 ms, Emission 51.836 ms, Total 59.241 ms
+ Execution Time: 626.436 ms
+(65 rows)
+

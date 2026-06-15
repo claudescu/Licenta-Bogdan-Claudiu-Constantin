@@ -1,0 +1,46 @@
+                                                                                    QUERY PLAN                                                                                    
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=59240.27..60712.30 rows=2412 width=95) (actual time=1278.008..1278.837 rows=63.00 loops=1)
+   Sort Key: d.d_year, d.d_qoy, (sum(cs.cs_net_paid)) DESC
+   Presorted Key: d.d_year, d.d_qoy
+   Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+   Buffers: shared hit=38876
+   ->  Finalize GroupAggregate  (cost=59238.49..60646.95 rows=2412 width=95) (actual time=1277.927..1278.768 rows=63.00 loops=1)
+         Group Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+         Buffers: shared hit=38873
+         ->  Gather Merge  (cost=59238.49..60393.69 rows=9648 width=95) (actual time=1277.914..1278.703 rows=63.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=38873
+               ->  Sort  (cost=58238.44..58244.47 rows=2412 width=95) (actual time=1277.351..1277.359 rows=63.00 loops=1)
+                     Sort Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+                     Sort Method: quicksort  Memory: 36kB
+                     Buffers: shared hit=38873
+                     ->  Partial HashAggregate  (cost=58066.75..58102.93 rows=2412 width=95) (actual time=1277.230..1277.293 rows=63.00 loops=1)
+                           Group Key: d.d_year, d.d_qoy, cc.cc_name, cc.cc_state
+                           Batches: 1  Memory Usage: 153kB
+                           Buffers: shared hit=38873
+                           ->  Hash Join  (cost=2391.96..51819.06 rows=357011 width=35) (actual time=28.483..817.787 rows=1430822.00 loops=1)
+                                 Hash Cond: (cs.cs_call_center_sk = cc.cc_call_center_sk)
+                                 Buffers: shared hit=38873
+                                 ->  Parallel Hash Join  (cost=2390.82..46903.15 rows=358577 width=24) (actual time=28.432..592.892 rows=1434357.00 loops=1)
+                                       Hash Cond: (cs.cs_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=38872
+                                       ->  Parallel Seq Scan on catalog_sales cs  (cost=0.00..41051.67 rows=360367 width=20) (actual time=0.006..110.880 rows=1441548.00 loops=1)
+                                             Buffers: shared hit=37448
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=12) (actual time=26.820..26.822 rows=73049.00 loops=1)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 4480kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=12) (actual time=0.019..14.298 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+                                 ->  Hash  (cost=1.06..1.06 rows=6 width=19) (actual time=0.031..0.032 rows=6.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=1
+                                       ->  Seq Scan on call_center cc  (cost=0.00..1.06 rows=6 width=19) (actual time=0.017..0.019 rows=6.00 loops=1)
+                                             Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=160
+ Planning Time: 0.947 ms
+ Execution Time: 1279.076 ms
+(42 rows)
+

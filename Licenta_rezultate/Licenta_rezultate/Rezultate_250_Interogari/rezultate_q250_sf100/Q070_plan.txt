@@ -1,0 +1,77 @@
+                                                                                                 QUERY PLAN                                                                                                  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=687219777.68..687219777.93 rows=100 width=153) (actual time=46029873.592..46033349.167 rows=100.00 loops=1)
+   Buffers: shared hit=171285 read=5555760, temp read=75248351 written=75255482
+   ->  Sort  (cost=687219777.68..687333106.31 rows=45331452 width=153) (actual time=46029129.736..46032592.558 rows=100.00 loops=1)
+         Sort Key: (round((((count(DISTINCT sr.sr_ticket_number))::numeric / (NULLIF(count(DISTINCT ss.ss_ticket_number), 0))::numeric) * '100'::numeric), 2)) DESC
+         Sort Method: top-N heapsort  Memory: 46kB
+         Buffers: shared hit=171285 read=5555760, temp read=75248351 written=75255482
+         ->  GroupAggregate  (cost=179994973.16..685487242.18 rows=45331452 width=153) (actual time=7388769.215..46027121.665 rows=7605295.00 loops=1)
+               Group Key: c.c_customer_id, c.c_first_name, c.c_last_name, ca.ca_state, cd.cd_credit_rating
+               Filter: ((count(DISTINCT sr.sr_ticket_number) > 1) AND (sum(ss.ss_net_paid) > '0'::numeric))
+               Rows Removed by Filter: 2455
+               Buffers: shared hit=171282 read=5555760, temp read=75248351 written=75255482
+               ->  Gather Merge  (cost=179994973.16..598082469.98 rows=3491783958 width=61) (actual time=7388767.080..44429573.773 rows=3936584239.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=171282 read=5555760, temp read=75248351 written=75255482
+                     ->  Sort  (cost=179993973.10..182176338.07 rows=872945990 width=61) (actual time=7371649.205..14964500.435 rows=787316847.80 loops=5)
+                           Sort Key: c.c_customer_id, c.c_first_name, c.c_last_name, ca.ca_state, cd.cd_credit_rating, ss.ss_ticket_number
+                           Sort Method: external merge  Disk: 58766256kB
+                           Buffers: shared hit=171282 read=5555760, temp read=75248351 written=75255482
+                           Worker 0:  Sort Method: external merge  Disk: 58861512kB
+                           Worker 1:  Sort Method: external merge  Disk: 58826512kB
+                           Worker 2:  Sort Method: external merge  Disk: 58869008kB
+                           Worker 3:  Sort Method: external merge  Disk: 59044520kB
+                           ->  Parallel Hash Join  (cost=852934.05..11908609.56 rows=872945990 width=61) (actual time=274229.754..399195.743 rows=787316847.80 loops=5)
+                                 Hash Cond: (ss.ss_customer_sk = c.c_customer_sk)
+                                 Buffers: shared hit=171222 read=5555760, temp read=1656990 written=1657436
+                                 ->  Hash Join  (cost=31893.29..7333901.58 rows=65749534 width=22) (actual time=205.384..219798.641 rows=53711896.60 loops=5)
+                                       Hash Cond: (ss.ss_hdemo_sk = hd.hd_demo_sk)
+                                       Buffers: shared hit=111021 read=5081313
+                                       ->  Parallel Hash Join  (cost=31681.29..6418078.51 rows=68830862 width=26) (actual time=201.342..204355.857 rows=55007829.40 loops=5)
+                                             Hash Cond: (ss.ss_cdemo_sk = cd.cd_demo_sk)
+                                             Buffers: shared hit=110771 read=5081313
+                                             ->  Parallel Seq Scan on store_sales ss  (cost=0.00..5894357.20 rows=72001320 width=22) (actual time=2.504..177170.111 rows=57599404.80 loops=5)
+                                                   Buffers: shared hit=93031 read=5081313
+                                             ->  Parallel Hash  (cost=23936.13..23936.13 rows=619613 width=12) (actual time=198.167..198.307 rows=384160.00 loops=5)
+                                                   Buckets: 2097152  Batches: 1  Memory Usage: 106592kB
+                                                   Buffers: shared hit=17740
+                                                   ->  Parallel Seq Scan on customer_demographics cd  (cost=0.00..23936.13 rows=619613 width=12) (actual time=0.095..78.478 rows=384160.00 loops=5)
+                                                         Buffers: shared hit=17740
+                                       ->  Hash  (cost=122.00..122.00 rows=7200 width=4) (actual time=3.937..5.550 rows=7200.00 loops=5)
+                                             Buckets: 8192  Batches: 1  Memory Usage: 318kB
+                                             Buffers: shared hit=250
+                                             ->  Seq Scan on household_demographics hd  (cost=0.00..122.00 rows=7200 width=4) (actual time=0.287..1.937 rows=7200.00 loops=5)
+                                                   Buffers: shared hit=250
+                                 ->  Parallel Hash  (cost=673004.68..673004.68 rows=6953606 width=47) (actual time=31816.643..31816.801 rows=5557332.20 loops=5)
+                                       Buckets: 2097152  Batches: 32  Memory Usage: 90528kB
+                                       Buffers: shared hit=60201 read=474447, temp written=232740
+                                       ->  Parallel Hash Right Join  (cost=76435.36..673004.68 rows=6953606 width=47) (actual time=1316.017..28473.706 rows=5557332.20 loops=5)
+                                             Hash Cond: (sr.sr_customer_sk = c.c_customer_sk)
+                                             Buffers: shared hit=60201 read=474447
+                                             ->  Parallel Seq Scan on store_returns sr  (cost=0.00..552191.50 rows=7198350 width=14) (actual time=38.175..21072.332 rows=5758456.40 loops=5)
+                                                   Buffers: shared hit=5761 read=474447
+                                             ->  Parallel Hash  (cost=70185.62..70185.62 rows=499979 width=37) (actual time=1273.449..1273.550 rows=400000.00 loops=5)
+                                                   Buckets: 2097152  Batches: 1  Memory Usage: 159872kB
+                                                   Buffers: shared hit=54440
+                                                   ->  Parallel Hash Join  (cost=24690.07..70185.62 rows=499979 width=37) (actual time=582.492..1003.392 rows=400000.00 loops=5)
+                                                         Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                                         Buffers: shared hit=54440
+                                                         ->  Parallel Seq Scan on customer c  (cost=0.00..42007.79 rows=499979 width=38) (actual time=0.020..69.528 rows=400000.00 loops=5)
+                                                               Buffers: shared hit=37008
+                                                         ->  Parallel Hash  (cost=20657.81..20657.81 rows=322581 width=7) (actual time=579.248..579.279 rows=200000.00 loops=5)
+                                                               Buckets: 1048576  Batches: 1  Memory Usage: 47360kB
+                                                               Buffers: shared hit=17432
+                                                               ->  Parallel Seq Scan on customer_address ca  (cost=0.00..20657.81 rows=322581 width=7) (actual time=421.314..494.695 rows=200000.00 loops=5)
+                                                                     Buffers: shared hit=17432
+ Planning:
+   Buffers: shared hit=225
+ Planning Time: 25.554 ms
+ JIT:
+   Functions: 225
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 32.768 ms (Deform 21.202 ms), Inlining 550.616 ms, Optimization 1411.678 ms, Emission 891.506 ms, Total 2886.568 ms
+ Execution Time: 46035816.366 ms
+(73 rows)
+

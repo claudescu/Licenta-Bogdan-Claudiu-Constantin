@@ -1,0 +1,84 @@
+                                                                                                         QUERY PLAN                                                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=6967468.31..6967468.36 rows=1 width=128) (actual time=856569.264..856609.273 rows=48.00 loops=1)
+   Group Key: ssales.c_last_name, ssales.c_first_name, ssales.s_store_name
+   Filter: (sum(ssales.netpaid) > (InitPlan 2).col1)
+   Rows Removed by Filter: 7
+   Buffers: shared hit=741621 read=4975555
+   CTE ssales
+     ->  GroupAggregate  (cost=6967468.12..6967468.28 rows=1 width=81) (actual time=856538.559..856580.881 rows=2104.00 loops=1)
+           Group Key: customer.c_last_name, customer.c_first_name, store.s_store_name, customer_address.ca_state, store.s_state, item.i_color, item.i_current_price, item.i_manager_id, item.i_units, item.i_size
+           Buffers: shared hit=741621 read=4975555
+           ->  Gather Merge  (cost=6967468.12..6967468.24 rows=1 width=55) (actual time=856536.525..856576.964 rows=2104.00 loops=1)
+                 Workers Planned: 2
+                 Workers Launched: 0
+                 Buffers: shared hit=741621 read=4975555
+                 ->  Sort  (cost=6966468.09..6966468.10 rows=1 width=55) (actual time=856534.496..856541.532 rows=2104.00 loops=1)
+                       Sort Key: customer.c_last_name, customer.c_first_name, store.s_store_name, customer_address.ca_state, store.s_state, item.i_color, item.i_current_price, item.i_manager_id, item.i_units, item.i_size
+                       Sort Method: quicksort  Memory: 262kB
+                       Buffers: shared hit=741621 read=4975555
+                       ->  Parallel Hash Join  (cost=6957091.32..6966468.08 rows=1 width=55) (actual time=854947.912..856502.022 rows=2104.00 loops=1)
+                             Hash Cond: (item.i_item_sk = store_sales.ss_item_sk)
+                             Buffers: shared hit=741621 read=4975555
+                             ->  Parallel Seq Scan on item  (cost=0.00..9058.00 rows=85000 width=30) (actual time=1.072..702.141 rows=204000.00 loops=1)
+                                   Buffers: shared hit=8208
+                             ->  Parallel Hash  (cost=6957091.31..6957091.31 rows=1 width=37) (actual time=854938.903..854940.686 rows=2104.00 loops=1)
+                                   Buckets: 2048 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 184kB
+                                   Buffers: shared hit=733413 read=4975555
+                                   ->  Parallel Hash Join  (cost=6350912.18..6957091.31 rows=1 width=37) (actual time=808399.378..854895.630 rows=2104.00 loops=1)
+                                         Hash Cond: ((store_returns.sr_ticket_number = store_sales.ss_ticket_number) AND (store_returns.sr_item_sk = store_sales.ss_item_sk))
+                                         Buffers: shared hit=733413 read=4975555
+                                         ->  Parallel Seq Scan on store_returns  (cost=0.00..552191.50 rows=7198350 width=8) (actual time=17.489..38919.008 rows=28792282.00 loops=1)
+                                               Buffers: shared read=480208
+                                         ->  Parallel Hash  (cost=6350878.04..6350878.04 rows=2276 width=37) (actual time=808049.653..808051.159 rows=21189.00 loops=1)
+                                               Buckets: 32768 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 1984kB
+                                               Buffers: shared hit=733413 read=4495347
+                                               ->  Parallel Hash Join  (cost=78482.96..6350878.04 rows=2276 width=37) (actual time=32519.798..807929.633 rows=21189.00 loops=1)
+                                                     Hash Cond: ((store_sales.ss_customer_sk = customer.c_customer_sk) AND ((store.s_zip)::text = (customer_address.ca_zip)::text))
+                                                     Buffers: shared hit=733413 read=4495347
+                                                     ->  Hash Join  (cost=25.47..6226117.47 rows=6172985 width=31) (actual time=199.813..769557.432 rows=21890465.00 loops=1)
+                                                           Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                                                           Buffers: shared hit=678973 read=4495347
+                                                           ->  Parallel Seq Scan on store_sales  (cost=0.00..5894357.20 rows=72001320 width=22) (actual time=0.372..587918.789 rows=287997024.00 loops=1)
+                                                                 Buffers: shared hit=678973 read=4495327
+                                                           ->  Hash  (cost=25.02..25.02 rows=36 width=17) (actual time=199.178..199.610 rows=36.00 loops=1)
+                                                                 Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                                                 Buffers: shared read=20
+                                                                 ->  Seq Scan on store  (cost=0.00..25.02 rows=36 width=17) (actual time=31.625..199.542 rows=36.00 loops=1)
+                                                                       Filter: (s_market_id = 8)
+                                                                       Rows Removed by Filter: 366
+                                                                       Buffers: shared read=20
+                                                     ->  Parallel Hash  (cost=70992.04..70992.04 rows=497696 width=26) (actual time=31919.141..31920.045 rows=1864068.00 loops=1)
+                                                           Buckets: 2097152  Batches: 1  Memory Usage: 132352kB
+                                                           Buffers: shared hit=54440
+                                                           ->  Parallel Hash Join  (cost=24690.07..70992.04 rows=497696 width=26) (actual time=10109.333..30655.434 rows=1864068.00 loops=1)
+                                                                 Hash Cond: (customer.c_current_addr_sk = customer_address.ca_address_sk)
+                                                                 Join Filter: ((customer.c_birth_country)::text <> upper((customer_address.ca_country)::text))
+                                                                 Rows Removed by Join Filter: 135932
+                                                                 Buffers: shared hit=54440
+                                                                 ->  Parallel Seq Scan on customer  (cost=0.00..42007.79 rows=499979 width=30) (actual time=0.586..9176.830 rows=2000000.00 loops=1)
+                                                                       Buffers: shared hit=37008
+                                                                 ->  Parallel Hash  (cost=20657.81..20657.81 rows=322581 width=27) (actual time=10096.512..10096.832 rows=1000000.00 loops=1)
+                                                                       Buckets: 1048576  Batches: 1  Memory Usage: 70048kB
+                                                                       Buffers: shared hit=17432
+                                                                       ->  Parallel Seq Scan on customer_address  (cost=0.00..20657.81 rows=322581 width=27) (actual time=2026.585..9461.911 rows=1000000.00 loops=1)
+                                                                             Buffers: shared hit=17432
+   InitPlan 2
+     ->  Aggregate  (cost=0.02..0.04 rows=1 width=32) (actual time=20.950..20.952 rows=1.00 loops=1)
+           ->  CTE Scan on ssales ssales_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.255..15.342 rows=2104.00 loops=1)
+                 Storage: Memory  Maximum Storage: 215kB
+   ->  CTE Scan on ssales  (cost=0.00..0.02 rows=1 width=128) (actual time=856540.518..856541.356 rows=57.00 loops=1)
+         Filter: ((i_color)::text = 'peach'::text)
+         Rows Removed by Filter: 2047
+         Storage: Memory  Maximum Storage: 215kB
+         Buffers: shared hit=741621 read=4975555
+ Planning:
+   Buffers: shared hit=328 read=7
+ Planning Time: 319.161 ms
+ JIT:
+   Functions: 65
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 25.106 ms (Deform 6.197 ms), Inlining 552.676 ms, Optimization 802.727 ms, Emission 794.337 ms, Total 2174.846 ms
+ Execution Time: 859051.901 ms
+(80 rows)
+

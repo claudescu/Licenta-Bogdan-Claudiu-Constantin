@@ -1,0 +1,75 @@
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5093757.71..5093758.21 rows=200 width=88) (actual time=42600.686..42669.527 rows=200.00 loops=1)
+   Buffers: shared hit=540047 read=2069058
+   ->  Sort  (cost=5093757.71..5094357.71 rows=240000 width=88) (actual time=42046.710..42115.528 rows=200.00 loops=1)
+         Sort Key: (sum(ss.ss_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 62kB
+         Buffers: shared hit=540047 read=2069058
+         ->  Finalize GroupAggregate  (cost=4940839.83..5083385.09 rows=240000 width=88) (actual time=41989.560..42112.811 rows=6100.00 loops=1)
+               Group Key: cd.cd_gender, cd.cd_marital_status, s.s_store_name, d.d_year, d.d_moy
+               Buffers: shared hit=540044 read=2069058
+               ->  Gather Merge  (cost=4940839.83..5055785.09 rows=960000 width=88) (actual time=41989.485..42096.906 rows=30500.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=540044 read=2069058
+                     ->  Sort  (cost=4939839.77..4940439.77 rows=240000 width=88) (actual time=41945.704..41946.555 rows=6100.00 loops=5)
+                           Sort Key: cd.cd_gender, cd.cd_marital_status, s.s_store_name, d.d_year, d.d_moy
+                           Sort Method: quicksort  Memory: 1274kB
+                           Buffers: shared hit=540044 read=2069058
+                           Worker 0:  Sort Method: quicksort  Memory: 1274kB
+                           Worker 1:  Sort Method: quicksort  Memory: 1274kB
+                           Worker 2:  Sort Method: quicksort  Memory: 1274kB
+                           Worker 3:  Sort Method: quicksort  Memory: 1274kB
+                           ->  Partial HashAggregate  (cost=4914792.56..4918392.56 rows=240000 width=88) (actual time=41926.209..41933.343 rows=6100.00 loops=5)
+                                 Group Key: cd.cd_gender, cd.cd_marital_status, s.s_store_name, d.d_year, d.d_moy
+                                 Batches: 1  Memory Usage: 8729kB
+                                 Buffers: shared hit=539984 read=2069058
+                                 Worker 0:  Batches: 1  Memory Usage: 8729kB
+                                 Worker 1:  Batches: 1  Memory Usage: 8729kB
+                                 Worker 2:  Batches: 1  Memory Usage: 8729kB
+                                 Worker 3:  Batches: 1  Memory Usage: 8729kB
+                                 ->  Parallel Hash Join  (cost=37413.95..4289045.08 rows=31287374 width=28) (actual time=570.307..32087.585 rows=26533585.40 loops=5)
+                                       Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=539984 read=2069058
+                                       ->  Hash Join  (cost=34081.36..3984339.39 rows=31287374 width=32) (actual time=563.364..25835.682 rows=26533585.40 loops=5)
+                                             Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                             Buffers: shared hit=537472 read=2069058
+                                             ->  Parallel Hash Join  (cost=34072.12..3548540.16 rows=32777665 width=32) (actual time=192.984..21665.997 rows=26857568.80 loops=5)
+                                                   Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                                   Buffers: shared hit=537442 read=2069058
+                                                   ->  Parallel Hash Join  (cost=31681.29..3224694.29 rows=34305399 width=28) (actual time=187.043..17476.381 rows=27505245.00 loops=5)
+                                                         Hash Cond: (ss.ss_cdemo_sk = cd.cd_demo_sk)
+                                                         Buffers: shared hit=536018 read=2069058
+                                                         ->  Parallel Seq Scan on store_sales ss  (cost=0.00..2947346.48 rows=36001048 width=28) (actual time=0.047..5781.605 rows=28800952.80 loops=5)
+                                                               Buffers: shared hit=518278 read=2069058
+                                                         ->  Parallel Hash  (cost=23936.13..23936.13 rows=619613 width=8) (actual time=182.616..182.629 rows=384160.00 loops=5)
+                                                               Buckets: 2097152  Batches: 1  Memory Usage: 91648kB
+                                                               Buffers: shared hit=17740
+                                                               ->  Parallel Seq Scan on customer_demographics cd  (cost=0.00..23936.13 rows=619613 width=8) (actual time=0.044..48.471 rows=384160.00 loops=5)
+                                                                     Buffers: shared hit=17740
+                                                   ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=12) (actual time=5.519..5.520 rows=14609.80 loops=5)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 4480kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=12) (actual time=0.019..13.216 rows=73049.00 loops=1)
+                                                               Buffers: shared hit=1424
+                                             ->  Hash  (cost=7.44..7.44 rows=144 width=8) (actual time=370.343..370.345 rows=144.00 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 15kB
+                                                   Buffers: shared hit=30
+                                                   ->  Seq Scan on store s  (cost=0.00..7.44 rows=144 width=8) (actual time=370.236..370.299 rows=144.00 loops=5)
+                                                         Buffers: shared hit=30
+                                       ->  Parallel Hash  (cost=2876.71..2876.71 rows=36471 width=4) (actual time=6.682..6.683 rows=12400.00 loops=5)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 2944kB
+                                             Buffers: shared hit=2512
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..2876.71 rows=36471 width=4) (actual time=0.047..22.072 rows=62000.00 loops=1)
+                                                   Buffers: shared hit=2512
+ Planning:
+   Buffers: shared hit=183
+ Planning Time: 2.109 ms
+ JIT:
+   Functions: 209
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 17.533 ms (Deform 8.061 ms), Inlining 497.257 ms, Optimization 1180.504 ms, Emission 727.878 ms, Total 2423.171 ms
+ Execution Time: 42711.409 ms
+(71 rows)
+

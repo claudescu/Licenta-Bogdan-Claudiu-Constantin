@@ -1,0 +1,55 @@
+                                                                                  QUERY PLAN                                                                                   
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=624237.12..624237.37 rows=100 width=57) (actual time=1692.008..1705.859 rows=100.00 loops=1)
+   Buffers: shared hit=72927 read=450120
+   ->  Sort  (cost=624237.12..624237.63 rows=206 width=57) (actual time=1311.837..1325.681 rows=100.00 loops=1)
+         Sort Key: (sum(store_sales.ss_ext_sales_price)) DESC, item.i_brand_id
+         Sort Method: top-N heapsort  Memory: 37kB
+         Buffers: shared hit=72927 read=450120
+         ->  GroupAggregate  (cost=624200.46..624229.25 rows=206 width=57) (actual time=1306.107..1325.252 rows=478.00 loops=1)
+               Group Key: item.i_brand, item.i_brand_id
+               Buffers: shared hit=72924 read=450120
+               ->  Gather Merge  (cost=624200.46..624225.13 rows=206 width=31) (actual time=1306.004..1322.890 rows=16058.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=72924 read=450120
+                     ->  Sort  (cost=623200.40..623200.53 rows=52 width=31) (actual time=1275.792..1275.966 rows=3211.60 loops=5)
+                           Sort Key: item.i_brand, item.i_brand_id
+                           Sort Method: quicksort  Memory: 266kB
+                           Buffers: shared hit=72924 read=450120
+                           Worker 0:  Sort Method: quicksort  Memory: 266kB
+                           Worker 1:  Sort Method: quicksort  Memory: 267kB
+                           Worker 2:  Sort Method: quicksort  Memory: 262kB
+                           Worker 3:  Sort Method: quicksort  Memory: 249kB
+                           ->  Parallel Hash Join  (cost=6722.05..623198.92 rows=52 width=31) (actual time=337.313..1273.682 rows=3211.60 loops=5)
+                                 Hash Cond: (store_sales.ss_item_sk = item.i_item_sk)
+                                 Buffers: shared hit=72864 read=450120
+                                 ->  Parallel Hash Join  (cost=2068.76..618535.21 rows=2724 width=14) (actual time=4.693..926.058 rows=176368.60 loops=5)
+                                       Hash Cond: (store_sales.ss_sold_date_sk = dt.d_date_sk)
+                                       Buffers: shared hit=68752 read=450120
+                                       ->  Parallel Seq Scan on store_sales  (cost=0.00..589449.80 rows=7200180 width=14) (actual time=0.468..470.191 rows=5760198.20 loops=5)
+                                             Buffers: shared hit=67328 read=450120
+                                       ->  Parallel Hash  (cost=2068.55..2068.55 rows=17 width=8) (actual time=3.755..3.757 rows=6.00 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 72kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim dt  (cost=0.00..2068.55 rows=17 width=8) (actual time=2.959..3.601 rows=6.00 loops=5)
+                                                   Filter: ((d_moy = 11) AND (d_year = 2000))
+                                                   Rows Removed by Filter: 14604
+                                                   Buffers: shared hit=1424
+                                 ->  Parallel Hash  (cost=4643.25..4643.25 rows=803 width=25) (actual time=329.620..329.621 rows=369.40 loops=5)
+                                       Buckets: 2048  Batches: 1  Memory Usage: 176kB
+                                       Buffers: shared hit=4112
+                                       ->  Parallel Seq Scan on item  (cost=0.00..4643.25 rows=803 width=25) (actual time=252.121..259.491 rows=369.40 loops=5)
+                                             Filter: (i_manager_id = 1)
+                                             Rows Removed by Filter: 20031
+                                             Buffers: shared hit=4112
+ Planning:
+   Buffers: shared hit=154
+ Planning Time: 1.218 ms
+ JIT:
+   Functions: 119
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 9.854 ms (Deform 5.492 ms), Inlining 391.665 ms, Optimization 755.268 ms, Emission 493.778 ms, Total 1650.566 ms
+ Execution Time: 1744.406 ms
+(51 rows)
+

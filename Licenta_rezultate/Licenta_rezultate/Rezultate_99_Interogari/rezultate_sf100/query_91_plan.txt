@@ -1,0 +1,85 @@
+                                                                                                                             QUERY PLAN                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=436190.70..436190.72 rows=5 width=88) (actual time=116704.376..116706.820 rows=30.00 loops=1)
+   Sort Key: (sum(catalog_returns.cr_net_loss)) DESC
+   Sort Method: quicksort  Memory: 27kB
+   Buffers: shared hit=56225 read=305122
+   ->  GroupAggregate  (cost=436189.92..436190.65 rows=5 width=88) (actual time=116704.163..116706.714 rows=30.00 loops=1)
+         Group Key: call_center.cc_call_center_id, call_center.cc_name, call_center.cc_manager, customer_demographics.cd_marital_status, customer_demographics.cd_education_status
+         Buffers: shared hit=56222 read=305122
+         ->  Gather Merge  (cost=436189.92..436190.51 rows=5 width=62) (actual time=116703.985..116706.466 rows=163.00 loops=1)
+               Workers Planned: 3
+               Workers Launched: 0
+               Buffers: shared hit=56222 read=305122
+               ->  Sort  (cost=435189.88..435189.88 rows=2 width=62) (actual time=116702.704..116702.774 rows=163.00 loops=1)
+                     Sort Key: call_center.cc_call_center_id, call_center.cc_name, call_center.cc_manager, customer_demographics.cd_marital_status, customer_demographics.cd_education_status
+                     Sort Method: quicksort  Memory: 38kB
+                     Buffers: shared hit=56222 read=305122
+                     ->  Hash Join  (cost=413594.97..435189.87 rows=2 width=62) (actual time=98282.198..116701.856 rows=163.00 loops=1)
+                           Hash Cond: (catalog_returns.cr_call_center_sk = call_center.cc_call_center_sk)
+                           Buffers: shared hit=56222 read=305122
+                           ->  Parallel Hash Join  (cost=413592.29..435187.16 rows=2 width=22) (actual time=97860.092..116279.021 rows=166.00 loops=1)
+                                 Hash Cond: (customer_address.ca_address_sk = customer.c_current_addr_sk)
+                                 Buffers: shared hit=56222 read=305120
+                                 ->  Parallel Seq Scan on customer_address  (cost=0.00..21464.26 rows=34828 width=4) (actual time=42.440..18790.366 rows=108673.00 loops=1)
+                                       Filter: (ca_gmt_offset = '-7'::numeric)
+                                       Rows Removed by Filter: 891327
+                                       Buffers: shared read=17432
+                                 ->  Parallel Hash  (cost=413592.09..413592.09 rows=16 width=26) (actual time=97415.670..97415.714 rows=1621.00 loops=1)
+                                       Buckets: 2048 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 152kB
+                                       Buffers: shared hit=56222 read=287688
+                                       ->  Parallel Hash Join  (cost=383329.20..413592.09 rows=16 width=26) (actual time=76829.684..97411.828 rows=1621.00 loops=1)
+                                             Hash Cond: (customer_demographics.cd_demo_sk = customer.c_current_cdemo_sk)
+                                             Buffers: shared hit=56222 read=287688
+                                             ->  Parallel Seq Scan on customer_demographics  (cost=0.00..30132.26 rows=34825 width=16) (actual time=8.762..20553.670 rows=109760.00 loops=1)
+                                                   Filter: ((((cd_marital_status)::text = 'M'::text) AND ((cd_education_status)::text = 'Unknown'::text)) OR (((cd_marital_status)::text = 'W'::text) AND ((cd_education_status)::text = 'Advanced Degree'::text)))
+                                                   Rows Removed by Filter: 1811040
+                                                   Buffers: shared hit=17740
+                                             ->  Parallel Hash  (cost=383326.39..383326.39 rows=225 width=18) (actual time=76789.983..76790.024 rows=30730.00 loops=1)
+                                                   Buckets: 32768 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 2168kB
+                                                   Buffers: shared hit=38482 read=287688
+                                                   ->  Hash Join  (cost=339432.67..383326.39 rows=225 width=18) (actual time=46966.663..76744.447 rows=30730.00 loops=1)
+                                                         Hash Cond: (customer.c_current_hdemo_sk = household_demographics.hd_demo_sk)
+                                                         Buffers: shared hit=38482 read=287688
+                                                         ->  Parallel Hash Join  (cost=339277.67..383163.89 rows=1400 width=22) (actual time=46952.911..76666.900 rows=190331.00 loops=1)
+                                                               Hash Cond: (customer.c_customer_sk = catalog_returns.cr_returning_customer_sk)
+                                                               Buffers: shared hit=38432 read=287688
+                                                               ->  Parallel Seq Scan on customer  (cost=0.00..42007.79 rows=499979 width=16) (actual time=12.660..13685.185 rows=2000000.00 loops=1)
+                                                                     Buffers: shared hit=37008
+                                                               ->  Parallel Hash  (cost=339259.81..339259.81 rows=1429 width=14) (actual time=46939.832..46939.854 rows=194162.00 loops=1)
+                                                                     Buckets: 262144 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 12960kB
+                                                                     Buffers: shared hit=1424 read=287688
+                                                                     ->  Parallel Hash Join  (cost=2068.76..339259.81 rows=1429 width=14) (actual time=3001.753..46822.958 rows=194162.00 loops=1)
+                                                                           Hash Cond: (catalog_returns.cr_returned_date_sk = date_dim.d_date_sk)
+                                                                           Buffers: shared hit=1424 read=287688
+                                                                           ->  Parallel Seq Scan on catalog_returns  (cost=0.00..323684.12 rows=3599612 width=18) (actual time=297.631..42853.400 rows=14399221.00 loops=1)
+                                                                                 Buffers: shared read=287688
+                                                                           ->  Parallel Hash  (cost=2068.55..2068.55 rows=17 width=4) (actual time=1016.263..1016.269 rows=30.00 loops=1)
+                                                                                 Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                                 Buffers: shared hit=1424
+                                                                                 ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=17 width=4) (actual time=459.657..1016.227 rows=30.00 loops=1)
+                                                                                       Filter: ((d_year = 1998) AND (d_moy = 11))
+                                                                                       Rows Removed by Filter: 73019
+                                                                                       Buffers: shared hit=1424
+                                                         ->  Hash  (cost=140.00..140.00 rows=1200 width=4) (actual time=1.529..1.535 rows=1200.00 loops=1)
+                                                               Buckets: 2048  Batches: 1  Memory Usage: 59kB
+                                                               Buffers: shared hit=50
+                                                               ->  Seq Scan on household_demographics  (cost=0.00..140.00 rows=1200 width=4) (actual time=0.082..1.364 rows=1200.00 loops=1)
+                                                                     Filter: ((hd_buy_potential)::text ~~ 'Unknown%'::text)
+                                                                     Rows Removed by Filter: 6000
+                                                                     Buffers: shared hit=50
+                           ->  Hash  (cost=2.30..2.30 rows=30 width=48) (actual time=422.040..422.041 rows=30.00 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                 Buffers: shared read=2
+                                 ->  Seq Scan on call_center  (cost=0.00..2.30 rows=30 width=48) (actual time=421.648..421.676 rows=30.00 loops=1)
+                                       Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=265 read=8
+ Planning Time: 259.059 ms
+ JIT:
+   Functions: 62
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 24.201 ms (Deform 2.800 ms), Inlining 0.000 ms, Optimization 5.705 ms, Emission 315.938 ms, Total 345.844 ms
+ Execution Time: 117996.017 ms
+(81 rows)
+

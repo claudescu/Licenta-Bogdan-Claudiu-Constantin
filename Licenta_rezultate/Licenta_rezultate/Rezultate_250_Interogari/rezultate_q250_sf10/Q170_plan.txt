@@ -1,0 +1,41 @@
+                                                                                  QUERY PLAN                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=771847.52..771847.54 rows=10 width=111) (actual time=14901.381..14901.533 rows=26.00 loops=1)
+   Sort Key: (round(((avg(ss.ss_sales_price) / NULLIF(avg(ss.ss_list_price), '0'::numeric)) * '100'::numeric), 2))
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=34573 read=482882
+   ->  Finalize GroupAggregate  (cost=771841.61..771847.35 rows=10 width=111) (actual time=14901.286..14901.471 rows=26.00 loops=1)
+         Group Key: s.s_store_name, s.s_state
+         Buffers: shared hit=34570 read=482882
+         ->  Gather Merge  (cost=771841.61..771846.40 rows=40 width=79) (actual time=14901.260..14901.410 rows=26.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=34570 read=482882
+               ->  Sort  (cost=770841.56..770841.58 rows=10 width=79) (actual time=14900.607..14900.614 rows=26.00 loops=1)
+                     Sort Key: s.s_store_name, s.s_state
+                     Sort Method: quicksort  Memory: 29kB
+                     Buffers: shared hit=34570 read=482882
+                     ->  Partial HashAggregate  (cost=770841.24..770841.39 rows=10 width=79) (actual time=14900.554..14900.573 rows=26.00 loops=1)
+                           Group Key: s.s_store_name, s.s_state
+                           Batches: 1  Memory Usage: 56kB
+                           Buffers: shared hit=34570 read=482882
+                           ->  Hash Join  (cost=6.29..685072.09 rows=6861532 width=19) (actual time=392.649..8392.472 rows=27505461.00 loops=1)
+                                 Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                 Buffers: shared hit=34570 read=482882
+                                 ->  Parallel Seq Scan on store_sales ss  (cost=0.00..589449.80 rows=7200180 width=16) (actual time=0.021..3394.749 rows=28800991.00 loops=1)
+                                       Buffers: shared hit=34566 read=482882
+                                 ->  Hash  (cost=5.02..5.02 rows=102 width=11) (actual time=392.596..392.599 rows=102.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                       Buffers: shared hit=4
+                                       ->  Seq Scan on store s  (cost=0.00..5.02 rows=102 width=11) (actual time=392.472..392.554 rows=102.00 loops=1)
+                                             Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=208
+ Planning Time: 1.122 ms
+ JIT:
+   Functions: 21
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.126 ms (Deform 1.050 ms), Inlining 95.540 ms, Optimization 181.451 ms, Emission 115.521 ms, Total 394.638 ms
+ Execution Time: 14929.453 ms
+(37 rows)
+

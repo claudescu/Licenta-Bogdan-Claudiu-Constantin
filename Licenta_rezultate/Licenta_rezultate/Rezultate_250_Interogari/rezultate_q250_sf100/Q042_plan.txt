@@ -1,0 +1,48 @@
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=109409025.85..109409026.35 rows=200 width=85) (actual time=1398921.987..1398922.079 rows=200.00 loops=1)
+   Buffers: shared hit=64695 read=5117889, temp read=2581725 written=4918946
+   ->  Sort  (cost=109409025.85..110098342.48 rows=275726655 width=85) (actual time=1398397.833..1398397.906 rows=200.00 loops=1)
+         Sort Key: s.s_store_name, (rank() OVER w1)
+         Sort Method: top-N heapsort  Memory: 51kB
+         Buffers: shared hit=64695 read=5117889, temp read=2581725 written=4918946
+         ->  WindowAgg  (cost=91977785.00..97492318.08 rows=275726655 width=85) (actual time=1321431.159..1390384.724 rows=40354731.00 loops=1)
+               Window: w1 AS (PARTITION BY ss.ss_store_sk ORDER BY (sum(ss.ss_net_paid)) ROWS UNBOUNDED PRECEDING)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=64689 read=5117889, temp read=2581725 written=4918946
+               ->  Sort  (cost=91977784.98..92667101.62 rows=275726655 width=77) (actual time=1321430.926..1372329.208 rows=40354731.00 loops=1)
+                     Sort Key: ss.ss_store_sk, (sum(ss.ss_net_paid)) DESC
+                     Sort Method: external merge  Disk: 2709648kB
+                     Buffers: shared hit=64689 read=5117889, temp read=2581725 written=4918946
+                     ->  HashAggregate  (cost=30677617.99..38970958.79 rows=275726655 width=77) (actual time=532437.459..1228778.747 rows=40354731.00 loops=1)
+                           Group Key: s.s_store_name, ss.ss_store_sk, i.i_product_name, i.i_category
+                           Planned Partitions: 1024  Batches: 1025  Memory Usage: 131097kB  Disk Usage: 18760712kB
+                           Buffers: shared hit=64683 read=5117889, temp read=2243019 written=4580179
+                           ->  Hash Join  (cost=12827.05..15695751.70 rows=275726655 width=43) (actual time=174.193..345595.739 rows=275044206.00 loops=1)
+                                 Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=64683 read=5117889
+                                 ->  Hash Join  (cost=29.05..11891712.20 rows=275726655 width=18) (actual time=0.476..180861.876 rows=275044206.00 loops=1)
+                                       Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                       Buffers: shared hit=56475 read=5117889
+                                       ->  Seq Scan on store_sales ss  (cost=0.00..8054396.80 rows=288005280 width=14) (actual time=0.066..88030.990 rows=287997024.00 loops=1)
+                                             Buffers: shared hit=56455 read=5117889
+                                       ->  Hash  (cost=24.02..24.02 rows=402 width=8) (actual time=0.392..0.422 rows=402.00 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 25kB
+                                             Buffers: shared hit=20
+                                             ->  Seq Scan on store s  (cost=0.00..24.02 rows=402 width=8) (actual time=0.065..0.342 rows=402.00 loops=1)
+                                                   Buffers: shared hit=20
+                                 ->  Hash  (cost=10248.00..10248.00 rows=204000 width=33) (actual time=171.771..171.779 rows=204000.00 loops=1)
+                                       Buckets: 262144  Batches: 1  Memory Usage: 15530kB
+                                       Buffers: shared hit=8208
+                                       ->  Seq Scan on item i  (cost=0.00..10248.00 rows=204000 width=33) (actual time=0.062..114.128 rows=204000.00 loops=1)
+                                             Buffers: shared hit=8208
+ Planning:
+   Buffers: shared hit=165
+ Planning Time: 1.786 ms
+ JIT:
+   Functions: 34
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 25.576 ms (Deform 2.271 ms), Inlining 199.437 ms, Optimization 291.463 ms, Emission 192.119 ms, Total 708.595 ms
+ Execution Time: 1400874.364 ms
+(44 rows)
+

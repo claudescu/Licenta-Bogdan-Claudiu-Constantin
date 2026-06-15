@@ -1,0 +1,64 @@
+                                                                                            QUERY PLAN                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=7517107.97..7517108.22 rows=100 width=83) (actual time=87027.425..87050.783 rows=0.00 loops=1)
+   Buffers: shared hit=4004 read=306208, temp read=423874 written=423953
+   ->  Sort  (cost=7517107.97..7523307.97 rows=2480000 width=83) (actual time=86419.394..86442.751 rows=0.00 loops=1)
+         Sort Key: (avg(inv.inv_quantity_on_hand))
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=4004 read=306208, temp read=423874 written=423953
+         ->  Finalize GroupAggregate  (cost=2887597.73..7422324.15 rows=2480000 width=83) (actual time=86419.311..86442.667 rows=0.00 loops=1)
+               Group Key: w.w_warehouse_name, w.w_state, i.i_category, i.i_brand, d.d_year
+               Filter: (avg(inv.inv_quantity_on_hand) < '50'::numeric)
+               Rows Removed by Filter: 29939
+               Buffers: shared hit=4001 read=306208, temp read=423874 written=423953
+               ->  Gather Merge  (cost=2887597.73..6789924.15 rows=29760000 width=83) (actual time=75536.916..86402.751 rows=149695.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=4001 read=306208, temp read=423874 written=423953
+                     ->  Partial GroupAggregate  (cost=2886597.67..3244221.19 rows=7440000 width=83) (actual time=75123.393..82628.090 rows=29939.00 loops=5)
+                           Group Key: w.w_warehouse_name, w.w_state, i.i_category, i.i_brand, d.d_year
+                           Buffers: shared hit=4001 read=306208, temp read=423874 written=423953
+                           ->  Sort  (cost=2886597.67..2922000.61 rows=14161176 width=51) (actual time=75123.125..80936.801 rows=11327765.40 loops=5)
+                                 Sort Key: w.w_warehouse_name, w.w_state, i.i_category, i.i_brand, d.d_year
+                                 Sort Method: external merge  Disk: 718992kB
+                                 Buffers: shared hit=4001 read=306208, temp read=423874 written=423953
+                                 Worker 0:  Sort Method: external merge  Disk: 657752kB
+                                 Worker 1:  Sort Method: external merge  Disk: 654016kB
+                                 Worker 2:  Sort Method: external merge  Disk: 680304kB
+                                 Worker 3:  Sort Method: external merge  Disk: 679928kB
+                                 ->  Parallel Hash Join  (cost=5724.58..921072.35 rows=14161176 width=51) (actual time=501.531..52278.870 rows=11327765.40 loops=5)
+                                       Hash Cond: (inv.inv_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=3941 read=306208
+                                       ->  Parallel Hash Join  (cost=3333.75..782276.07 rows=14161176 width=51) (actual time=493.215..49991.154 rows=11327765.40 loops=5)
+                                             Hash Cond: (inv.inv_item_sk = i.i_item_sk)
+                                             Buffers: shared hit=2517 read=306208
+                                             ->  Hash Join  (cost=1.16..642537.09 rows=14161176 width=32) (actual time=25.914..46348.641 rows=11327765.40 loops=5)
+                                                   Hash Cond: (inv.inv_warehouse_sk = w.w_warehouse_sk)
+                                                   Buffers: shared hit=5 read=306208
+                                                   ->  Parallel Seq Scan on inventory inv  (cost=0.00..447819.76 rows=14161176 width=16) (actual time=25.684..43763.332 rows=11327765.40 loops=5)
+                                                         Buffers: shared read=306208
+                                                   ->  Hash  (cost=1.07..1.07 rows=7 width=24) (actual time=0.151..0.153 rows=7.00 loops=5)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                         Buffers: shared hit=5
+                                                         ->  Seq Scan on warehouse w  (cost=0.00..1.07 rows=7 width=24) (actual time=0.129..0.133 rows=7.00 loops=5)
+                                                               Buffers: shared hit=5
+                                             ->  Parallel Hash  (cost=2876.71..2876.71 rows=36471 width=27) (actual time=467.040..467.041 rows=12400.00 loops=5)
+                                                   Buckets: 65536  Batches: 1  Memory Usage: 4512kB
+                                                   Buffers: shared hit=2512
+                                                   ->  Parallel Seq Scan on item i  (cost=0.00..2876.71 rows=36471 width=27) (actual time=340.159..346.800 rows=12400.00 loops=5)
+                                                         Buffers: shared hit=2512
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=7.784..7.785 rows=14609.80 loops=5)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.058..23.029 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=157 read=1
+ Planning Time: 144.988 ms
+ JIT:
+   Functions: 165
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 18.206 ms (Deform 9.196 ms), Inlining 547.442 ms, Optimization 1065.779 ms, Emission 696.217 ms, Total 2327.644 ms
+ Execution Time: 87620.115 ms
+(60 rows)
+

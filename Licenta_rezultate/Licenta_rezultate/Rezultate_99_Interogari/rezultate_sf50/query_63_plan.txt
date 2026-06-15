@@ -1,0 +1,67 @@
+                                                                                                                                                                                                                                                                                                                   QUERY PLAN                                                                                                                                                                                                                                                                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3089861.69..3089930.97 rows=100 width=68) (actual time=143551.061..143601.053 rows=100.00 loops=1)
+   Buffers: shared hit=1352126 read=1235875
+   ->  Incremental Sort  (cost=3089861.69..3090030.74 rows=244 width=68) (actual time=143086.257..143136.238 rows=100.00 loops=1)
+         Sort Key: tmp1.i_manager_id, tmp1.avg_monthly_sales, tmp1.sum_sales
+         Presorted Key: tmp1.i_manager_id
+         Full-sort Groups: 3  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+         Buffers: shared hit=1352126 read=1235875
+         ->  Subquery Scan on tmp1  (cost=3089860.63..3090022.87 rows=244 width=68) (actual time=143067.293..143136.017 rows=109.00 loops=1)
+               Filter: (CASE WHEN (tmp1.avg_monthly_sales > '0'::numeric) THEN (abs((tmp1.sum_sales - tmp1.avg_monthly_sales)) / tmp1.avg_monthly_sales) ELSE NULL::numeric END > 0.1)
+               Buffers: shared hit=1352123 read=1235875
+               ->  WindowAgg  (cost=3089860.63..3090006.40 rows=732 width=72) (actual time=143067.271..143135.932 rows=109.00 loops=1)
+                     Window: w1 AS (PARTITION BY item.i_manager_id)
+                     Storage: Memory  Maximum Storage: 17kB
+                     Buffers: shared hit=1352123 read=1235875
+                     ->  GroupAggregate  (cost=3089858.40..3089995.42 rows=732 width=40) (actual time=143061.620..143135.731 rows=121.00 loops=1)
+                           Group Key: item.i_manager_id, date_dim.d_moy
+                           Buffers: shared hit=1352123 read=1235875
+                           ->  Gather Merge  (cost=3089858.40..3089978.74 rows=1005 width=14) (actual time=143061.068..143109.573 rows=179157.00 loops=1)
+                                 Workers Planned: 4
+                                 Workers Launched: 0
+                                 Buffers: shared hit=1352123 read=1235875
+                                 ->  Sort  (cost=3088858.35..3088858.97 rows=251 width=14) (actual time=143060.342..143094.977 rows=179157.00 loops=1)
+                                       Sort Key: item.i_manager_id, date_dim.d_moy
+                                       Sort Method: quicksort  Memory: 55257kB
+                                       Buffers: shared hit=1352123 read=1235875
+                                       ->  Hash Join  (cost=5960.85..3088848.34 rows=251 width=14) (actual time=57.863..142420.737 rows=984761.00 loops=1)
+                                             Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                                             Buffers: shared hit=1352123 read=1235875
+                                             ->  Parallel Hash Join  (cost=5951.61..3088835.61 rows=263 width=18) (actual time=57.724..142180.367 rows=1008814.00 loops=1)
+                                                   Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=1352117 read=1235875
+                                                   ->  Parallel Hash Join  (cost=3880.35..3086555.93 rows=55163 width=18) (actual time=31.140..141396.579 rows=6096870.00 loops=1)
+                                                         Hash Cond: (store_sales.ss_item_sk = item.i_item_sk)
+                                                         Buffers: shared hit=1350693 read=1235875
+                                                         ->  Parallel Seq Scan on store_sales  (cost=0.00..2947346.48 rows=36001048 width=18) (actual time=0.016..119022.169 rows=144004764.00 loops=1)
+                                                               Buffers: shared hit=1348181 read=1235875
+                                                         ->  Parallel Hash  (cost=3879.65..3879.65 rows=56 width=8) (actual time=31.078..31.094 rows=3240.00 loops=1)
+                                                               Buckets: 4096 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 184kB
+                                                               Buffers: shared hit=2512
+                                                               ->  Parallel Seq Scan on item  (cost=0.00..3879.65 rows=56 width=8) (actual time=0.046..30.449 rows=3240.00 loops=1)
+                                                                     Filter: ((((i_category)::text = ANY ('{Books,Children,Electronics}'::text[])) AND ((i_class)::text = ANY ('{personal,portable,reference,self-help}'::text[])) AND ((i_brand)::text = ANY ('{"scholaramalgamalg #14","scholaramalgamalg #7","exportiunivamalg #9","scholaramalgamalg #9"}'::text[]))) OR (((i_category)::text = ANY ('{Women,Music,Men}'::text[])) AND ((i_class)::text = ANY ('{accessories,classical,fragrances,pants}'::text[])) AND ((i_brand)::text = ANY ('{"amalgimporto #1","edu packscholar #1","exportiimporto #1","importoamalg #1"}'::text[]))))
+                                                                     Rows Removed by Filter: 58760
+                                                                     Buffers: shared hit=2512
+                                                   ->  Parallel Hash  (cost=2068.58..2068.58 rows=215 width=8) (actual time=10.102..10.103 rows=366.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.03..2068.58 rows=215 width=8) (actual time=5.432..10.042 rows=366.00 loops=1)
+                                                               Filter: (d_month_seq = ANY ('{1200,1201,1202,1203,1204,1205,1206,1207,1208,1209,1210,1211}'::integer[]))
+                                                               Rows Removed by Filter: 72683
+                                                               Buffers: shared hit=1424
+                                             ->  Hash  (cost=7.44..7.44 rows=144 width=4) (actual time=0.125..0.127 rows=144.00 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 14kB
+                                                   Buffers: shared hit=6
+                                                   ->  Seq Scan on store  (cost=0.00..7.44 rows=144 width=4) (actual time=0.051..0.107 rows=144.00 loops=1)
+                                                         Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=210 read=1
+ Planning Time: 2.372 ms
+ JIT:
+   Functions: 41
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 3.165 ms (Deform 1.549 ms), Inlining 95.769 ms, Optimization 225.015 ms, Emission 144.272 ms, Total 468.220 ms
+ Execution Time: 143667.773 ms
+(63 rows)
+

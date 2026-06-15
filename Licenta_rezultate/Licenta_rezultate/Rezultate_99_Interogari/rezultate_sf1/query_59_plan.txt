@@ -1,0 +1,93 @@
+                                                                               QUERY PLAN                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=143123.96..143123.97 rows=1 width=250) (actual time=941.493..942.121 rows=100.00 loops=1)
+   Buffers: shared hit=56072
+   CTE wss
+     ->  Finalize HashAggregate  (cost=133284.42..135005.70 rows=62592 width=232) (actual time=659.596..662.304 rows=1834.00 loops=1)
+           Group Key: date_dim.d_week_seq, store_sales.ss_store_sk
+           Batches: 1  Memory Usage: 9489kB
+           Buffers: shared hit=53216
+           ->  Gather  (cost=96511.62..123269.70 rows=250368 width=232) (actual time=637.972..643.884 rows=9170.00 loops=1)
+                 Workers Planned: 4
+                 Workers Launched: 4
+                 Buffers: shared hit=53216
+                 ->  Partial HashAggregate  (cost=95511.62..97232.90 rows=62592 width=232) (actual time=602.734..606.481 rows=1834.00 loops=5)
+                       Group Key: date_dim.d_week_seq, store_sales.ss_store_sk
+                       Batches: 1  Memory Usage: 5393kB
+                       Buffers: shared hit=53216
+                       Worker 0:  Batches: 1  Memory Usage: 5393kB
+                       Worker 1:  Batches: 1  Memory Usage: 5393kB
+                       Worker 2:  Batches: 1  Memory Usage: 5393kB
+                       Worker 3:  Batches: 1  Memory Usage: 5393kB
+                       ->  Parallel Hash Join  (cost=2390.82..68112.18 rows=684986 width=22) (actual time=37.273..335.470 rows=550110.80 loops=5)
+                             Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                             Buffers: shared hit=53216
+                             ->  Parallel Seq Scan on store_sales  (cost=0.00..58992.01 rows=720002 width=14) (actual time=0.039..65.734 rows=576080.80 loops=5)
+                                   Buffers: shared hit=51792
+                             ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=16) (actual time=36.720..36.721 rows=14609.80 loops=5)
+                                   Buckets: 131072  Batches: 1  Memory Usage: 4832kB
+                                   Buffers: shared hit=1424
+                                   ->  Parallel Seq Scan on date_dim  (cost=0.00..1853.70 rows=42970 width=16) (actual time=20.666..25.204 rows=14609.80 loops=5)
+                                         Buffers: shared hit=1424
+   ->  Sort  (cost=8118.27..8118.27 rows=1 width=250) (actual time=858.161..858.175 rows=100.00 loops=1)
+         Sort Key: store.s_store_name NULLS FIRST, store.s_store_id NULLS FIRST, wss.d_week_seq NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 75kB
+         Buffers: shared hit=56072
+         ->  Nested Loop  (cost=6625.25..8118.26 rows=1 width=250) (actual time=682.729..854.345 rows=15288.00 loops=1)
+               Join Filter: ((wss.ss_store_sk = store.s_store_sk) AND ((store.s_store_id)::text = (store_1.s_store_id)::text))
+               Rows Removed by Join Filter: 1268904
+               Buffers: shared hit=56066
+               ->  Hash Join  (cost=6625.25..8112.05 rows=24 width=473) (actual time=682.693..697.381 rows=107016.00 loops=1)
+                     Hash Cond: (wss.d_week_seq = d.d_week_seq)
+                     Buffers: shared hit=56065
+                     ->  CTE Scan on wss  (cost=0.00..1251.84 rows=62592 width=232) (actual time=659.602..659.731 rows=1834.00 loops=1)
+                           Storage: Memory  Maximum Storage: 178kB
+                           Buffers: shared hit=53216
+                     ->  Hash  (cost=6625.20..6625.20 rows=4 width=249) (actual time=23.033..23.040 rows=15288.00 loops=1)
+                           Buckets: 16384 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 1821kB
+                           Buffers: shared hit=2849
+                           ->  Hash Join  (cost=4094.47..6625.20 rows=4 width=249) (actual time=13.242..18.296 rows=15288.00 loops=1)
+                                 Hash Cond: (d.d_week_seq = (wss_1.d_week_seq - 52))
+                                 Buffers: shared hit=2849
+                                 ->  Seq Scan on date_dim d  (cost=0.00..2519.73 rows=337 width=4) (actual time=2.971..5.970 rows=365.00 loops=1)
+                                       Filter: ((d_month_seq >= 1212) AND (d_month_seq <= 1223))
+                                       Rows Removed by Filter: 72684
+                                       Buffers: shared hit=1424
+                                 ->  Hash  (cost=4092.92..4092.92 rows=124 width=245) (actual time=10.239..10.243 rows=2190.00 loops=1)
+                                       Buckets: 4096 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 266kB
+                                       Buffers: shared hit=1425
+                                       ->  Hash Join  (cost=2525.30..4092.92 rows=124 width=245) (actual time=5.908..9.508 rows=2190.00 loops=1)
+                                             Hash Cond: (wss_1.d_week_seq = d_1.d_week_seq)
+                                             Buffers: shared hit=1425
+                                             ->  Hash Join  (cost=1.27..1525.39 rows=3756 width=245) (actual time=0.099..3.371 rows=1572.00 loops=1)
+                                                   Hash Cond: (wss_1.ss_store_sk = store_1.s_store_sk)
+                                                   Buffers: shared hit=1
+                                                   ->  CTE Scan on wss wss_1  (cost=0.00..1251.84 rows=62592 width=232) (actual time=0.002..2.900 rows=1834.00 loops=1)
+                                                         Storage: Memory  Maximum Storage: 178kB
+                                                   ->  Hash  (cost=1.12..1.12 rows=12 width=21) (actual time=0.079..0.080 rows=12.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                         Buffers: shared hit=1
+                                                         ->  Seq Scan on store store_1  (cost=0.00..1.12 rows=12 width=21) (actual time=0.058..0.060 rows=12.00 loops=1)
+                                                               Buffers: shared hit=1
+                                             ->  Hash  (cost=2519.73..2519.73 rows=344 width=4) (actual time=5.788..5.789 rows=365.00 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 21kB
+                                                   Buffers: shared hit=1424
+                                                   ->  Seq Scan on date_dim d_1  (cost=0.00..2519.73 rows=344 width=4) (actual time=2.703..5.736 rows=365.00 loops=1)
+                                                         Filter: ((d_month_seq >= 1224) AND (d_month_seq <= 1235))
+                                                         Rows Removed by Filter: 72684
+                                                         Buffers: shared hit=1424
+               ->  Materialize  (cost=0.00..1.18 rows=12 width=26) (actual time=0.000..0.001 rows=12.00 loops=107016)
+                     Storage: Memory  Maximum Storage: 17kB
+                     Buffers: shared hit=1
+                     ->  Seq Scan on store  (cost=0.00..1.12 rows=12 width=26) (actual time=0.016..0.018 rows=12.00 loops=1)
+                           Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=217
+ Planning Time: 3.163 ms
+ JIT:
+   Functions: 144
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 18.068 ms (Deform 10.403 ms), Inlining 0.000 ms, Optimization 10.034 ms, Emission 177.172 ms, Total 205.274 ms
+ Execution Time: 981.328 ms
+(89 rows)
+

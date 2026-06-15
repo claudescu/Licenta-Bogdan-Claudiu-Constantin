@@ -1,0 +1,93 @@
+                                                                                                                   QUERY PLAN                                                                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=318305.56..318305.81 rows=100 width=172) (actual time=5104.152..5132.145 rows=100.00 loops=1)
+   Buffers: shared hit=262397, temp read=12365 written=12367
+   CTE results
+     ->  Finalize GroupAggregate  (cost=317321.92..318040.01 rows=990 width=118) (actual time=4634.294..5072.745 rows=134.00 loops=1)
+           Group Key: item.i_category, item.i_class
+           Buffers: shared hit=262388, temp read=12365 written=12367
+           ->  Gather Merge  (cost=317321.92..317994.97 rows=1683 width=78) (actual time=4625.295..5072.414 rows=243.00 loops=1)
+                 Workers Planned: 1
+                 Workers Launched: 1
+                 Buffers: shared hit=262388, temp read=12365 written=12367
+                 ->  Partial GroupAggregate  (cost=316321.91..316805.62 rows=990 width=78) (actual time=4278.216..4686.949 rows=121.50 loops=2)
+                       Group Key: item.i_category, item.i_class
+                       Buffers: shared hit=262388, temp read=12365 written=12367
+                       ->  Sort  (cost=316321.91..316415.68 rows=37509 width=26) (actual time=4275.443..4444.209 rows=1287372.50 loops=2)
+                             Sort Key: item.i_category, item.i_class
+                             Sort Method: external merge  Disk: 50152kB
+                             Buffers: shared hit=262388, temp read=12365 written=12367
+                             Worker 0:  Sort Method: external merge  Disk: 48768kB
+                             ->  Parallel Hash Join  (cost=310749.62..313472.17 rows=37509 width=26) (actual time=3233.745..3588.910 rows=1287372.50 loops=2)
+                                   Hash Cond: (item.i_item_sk = store_sales.ss_item_sk)
+                                   Buffers: shared hit=262380
+                                   ->  Parallel Seq Scan on item  (cost=0.00..2509.65 rows=31765 width=18) (actual time=0.048..13.140 rows=27000.00 loops=2)
+                                         Buffers: shared hit=2192
+                                   ->  Parallel Hash  (cost=310550.35..310550.35 rows=15942 width=16) (actual time=3232.642..3232.650 rows=1287372.50 loops=2)
+                                         Buckets: 4194304 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 203744kB
+                                         Buffers: shared hit=260188
+                                         ->  Hash Join  (cost=1967.06..310550.35 rows=15942 width=16) (actual time=31.967..2634.801 rows=1287372.50 loops=2)
+                                               Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                                               Buffers: shared hit=260188
+                                               ->  Parallel Hash Join  (cost=1963.78..310323.92 rows=16996 width=20) (actual time=14.802..2439.481 rows=1368472.00 loops=2)
+                                                     Hash Cond: (store_sales.ss_sold_date_sk = d1.d_date_sk)
+                                                     Buffers: shared hit=260184
+                                                     ->  Parallel Seq Scan on store_sales  (cost=0.00..294760.24 rows=3600024 width=24) (actual time=0.087..1018.839 rows=7200026.00 loops=2)
+                                                           Buffers: shared hit=258760
+                                                     ->  Parallel Hash  (cost=1961.12..1961.12 rows=212 width=4) (actual time=14.656..14.658 rows=182.50 loops=2)
+                                                           Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                           Buffers: shared hit=1424
+                                                           ->  Parallel Seq Scan on date_dim d1  (cost=0.00..1961.12 rows=212 width=4) (actual time=15.452..29.226 rows=365.00 loops=1)
+                                                                 Filter: (d_year = 2001)
+                                                                 Rows Removed by Filter: 72684
+                                                                 Buffers: shared hit=1424
+                                               ->  Hash  (cost=2.65..2.65 rows=51 width=4) (actual time=17.114..17.115 rows=51.00 loops=2)
+                                                     Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                                     Buffers: shared hit=4
+                                                     ->  Seq Scan on store  (cost=0.00..2.65 rows=51 width=4) (actual time=17.041..17.083 rows=51.00 loops=2)
+                                                           Filter: ((s_state)::text = 'TN'::text)
+                                                           Rows Removed by Filter: 1
+                                                           Buffers: shared hit=4
+   ->  Sort  (cost=265.55..268.52 rows=1191 width=172) (actual time=5045.786..5045.796 rows=100.00 loops=1)
+         Sort Key: results_rollup.lochierarchy DESC, (CASE WHEN (results_rollup.lochierarchy = 0) THEN results_rollup.i_category ELSE NULL::character varying END) NULLS FIRST, (rank() OVER w1) NULLS FIRST
+         Sort Method: quicksort  Memory: 41kB
+         Buffers: shared hit=135538, temp read=6269 written=6270
+         ->  WindowAgg  (cost=187.30..220.03 rows=1191 width=172) (actual time=5045.490..5045.571 rows=146.00 loops=1)
+               Window: w1 AS (PARTITION BY results_rollup.lochierarchy, (CASE WHEN (results_rollup.t_class = 0) THEN results_rollup.i_category ELSE NULL::character varying END) ORDER BY results_rollup.gross_margin ROWS UNBOUNDED PRECEDING)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=135532, temp read=6269 written=6270
+               ->  Sort  (cost=187.28..190.25 rows=1191 width=132) (actual time=5045.458..5045.469 rows=146.00 loops=1)
+                     Sort Key: results_rollup.lochierarchy, (CASE WHEN (results_rollup.t_class = 0) THEN results_rollup.i_category ELSE NULL::character varying END), results_rollup.gross_margin
+                     Sort Method: quicksort  Memory: 33kB
+                     Buffers: shared hit=135532, temp read=6269 written=6270
+                     ->  Subquery Scan on results_rollup  (cost=99.63..126.43 rows=1191 width=132) (actual time=5045.268..5045.312 rows=146.00 loops=1)
+                           Buffers: shared hit=135529, temp read=6269 written=6270
+                           ->  HashAggregate  (cost=99.63..111.54 rows=1191 width=108) (actual time=5045.246..5045.275 rows=146.00 loops=1)
+                                 Group Key: results.gross_margin, results.i_category, results.i_class, (0), (0), (0)
+                                 Batches: 1  Memory Usage: 81kB
+                                 Buffers: shared hit=135529, temp read=6269 written=6270
+                                 ->  Append  (cost=0.00..81.77 rows=1191 width=108) (actual time=4634.317..5045.098 rows=146.00 loops=1)
+                                       Buffers: shared hit=135529, temp read=6269 written=6270
+                                       ->  CTE Scan on results  (cost=0.00..19.80 rows=990 width=108) (actual time=4634.315..5044.908 rows=134.00 loops=1)
+                                             Storage: Memory  Maximum Storage: 27kB
+                                             Buffers: shared hit=135529, temp read=6269 written=6270
+                                       ->  GroupAggregate  (cost=0.00..31.23 rows=200 width=108) (actual time=0.049..0.091 rows=11.00 loops=1)
+                                             Group Key: results_1.i_category
+                                             ->  CTE Scan on results results_1  (cost=0.00..19.80 rows=990 width=96) (actual time=0.001..0.011 rows=134.00 loops=1)
+                                                   Storage: Memory  Maximum Storage: 27kB
+                                       ->  Sort  (cost=24.78..24.79 rows=1 width=108) (actual time=0.072..0.073 rows=1.00 loops=1)
+                                             Sort Key: (((sum(results_2.ss_net_profit) * 1.0000) / sum(results_2.ss_ext_sales_price)))
+                                             Sort Method: quicksort  Memory: 25kB
+                                             ->  Aggregate  (cost=24.75..24.77 rows=1 width=108) (actual time=0.039..0.041 rows=1.00 loops=1)
+                                                   ->  CTE Scan on results results_2  (cost=0.00..19.80 rows=990 width=64) (actual time=0.001..0.008 rows=134.00 loops=1)
+                                                         Storage: Memory  Maximum Storage: 27kB
+ Planning:
+   Buffers: shared hit=176
+ Planning Time: 8.603 ms
+ JIT:
+   Functions: 96
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 13.008 ms (Deform 6.576 ms), Inlining 0.000 ms, Optimization 4.302 ms, Emission 88.157 ms, Total 105.467 ms
+ Execution Time: 5231.804 ms
+(89 rows)
+

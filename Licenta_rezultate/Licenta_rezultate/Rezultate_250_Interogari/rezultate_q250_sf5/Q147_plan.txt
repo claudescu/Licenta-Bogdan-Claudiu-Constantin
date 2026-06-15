@@ -1,0 +1,51 @@
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=50052.32..50057.35 rows=2010 width=84) (actual time=361.159..369.857 rows=66.00 loops=1)
+   Sort Key: (sum(sr.sr_net_loss)) DESC
+   Sort Method: quicksort  Memory: 29kB
+   Buffers: shared hit=25496
+   ->  Finalize GroupAggregate  (cost=49050.11..49942.05 rows=2010 width=84) (actual time=360.890..369.793 rows=66.00 loops=1)
+         Group Key: s.s_store_name, s.s_state, d.d_year
+         Buffers: shared hit=25493
+         ->  Gather Merge  (cost=49050.11..49787.28 rows=6231 width=84) (actual time=360.875..369.632 rows=264.00 loops=1)
+               Workers Planned: 3
+               Workers Launched: 3
+               Buffers: shared hit=25493
+               ->  Sort  (cost=48050.07..48055.09 rows=2010 width=84) (actual time=352.107..352.115 rows=66.00 loops=4)
+                     Sort Key: s.s_store_name, s.s_state, d.d_year
+                     Sort Method: quicksort  Memory: 36kB
+                     Buffers: shared hit=25493
+                     Worker 0:  Sort Method: quicksort  Memory: 36kB
+                     Worker 1:  Sort Method: quicksort  Memory: 36kB
+                     Worker 2:  Sort Method: quicksort  Memory: 36kB
+                     ->  Partial HashAggregate  (cost=47909.64..47939.79 rows=2010 width=84) (actual time=351.960..352.004 rows=66.00 loops=4)
+                           Group Key: s.s_store_name, s.s_state, d.d_year
+                           Batches: 1  Memory Usage: 153kB
+                           Buffers: shared hit=25448
+                           Worker 0:  Batches: 1  Memory Usage: 153kB
+                           Worker 1:  Batches: 1  Memory Usage: 153kB
+                           Worker 2:  Batches: 1  Memory Usage: 153kB
+                           ->  Hash Join  (cost=2393.99..41425.63 rows=432267 width=24) (actual time=10.790..230.739 rows=340666.25 loops=4)
+                                 Hash Cond: (sr.sr_store_sk = s.s_store_sk)
+                                 Buffers: shared hit=25448
+                                 ->  Parallel Hash Join  (cost=2390.82..35420.87 rows=447713 width=20) (actual time=10.669..167.496 rows=347055.50 loops=4)
+                                       Hash Cond: (sr.sr_returned_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=25440
+                                       ->  Parallel Seq Scan on store_returns sr  (cost=0.00..28656.32 rows=464032 width=20) (actual time=0.026..37.708 rows=359624.50 loops=4)
+                                             Buffers: shared hit=24016
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=10.148..10.149 rows=18262.25 loops=4)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 3936kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.027..4.966 rows=18262.25 loops=4)
+                                                   Buffers: shared hit=1424
+                                 ->  Hash  (cost=2.52..2.52 rows=52 width=12) (actual time=0.103..0.104 rows=52.00 loops=4)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                       Buffers: shared hit=8
+                                       ->  Seq Scan on store s  (cost=0.00..2.52 rows=52 width=12) (actual time=0.050..0.072 rows=52.00 loops=4)
+                                             Buffers: shared hit=8
+ Planning:
+   Buffers: shared hit=157
+ Planning Time: 1.625 ms
+ Execution Time: 370.175 ms
+(47 rows)
+

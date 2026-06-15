@@ -1,0 +1,52 @@
+                                                                                     QUERY PLAN                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1622497.32..1622850.05 rows=200 width=131) (actual time=97562.272..108017.996 rows=200.00 loops=1)
+   Buffers: shared hit=31466 read=491522, temp read=15652 written=251055
+   ->  GroupAggregate  (cost=1622497.32..47757826.74 rows=26158903 width=131) (actual time=97235.716..107691.368 rows=200.00 loops=1)
+         Group Key: i.i_category, CASE WHEN (ss.ss_promo_sk IS NOT NULL) THEN 'CU PROMOTIE'::text ELSE 'FARA PROMOTIE'::text END, d.d_year, i.i_brand
+         Buffers: shared hit=31466 read=491522, temp read=15652 written=251055
+         ->  Nested Loop  (cost=1622497.32..46907662.39 rows=26158903 width=71) (actual time=97167.340..107499.141 rows=1058017.00 loops=1)
+               Join Filter: (ss.ss_store_sk = s.s_store_sk)
+               Rows Removed by Join Filter: 108153678
+               Buffers: shared hit=31466 read=491522, temp read=15652 written=251055
+               ->  Gather Merge  (cost=1622497.32..4909209.13 rows=27449966 width=47) (actual time=97167.249..97941.603 rows=1070703.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 0
+                     Buffers: shared hit=31462 read=491522, temp read=15652 written=251055
+                     ->  Sort  (cost=1621497.26..1638653.49 rows=6862492 width=47) (actual time=97166.436..97818.882 rows=1070703.00 loops=1)
+                           Sort Key: i.i_category, (CASE WHEN (ss.ss_promo_sk IS NOT NULL) THEN 'CU PROMOTIE'::text ELSE 'FARA PROMOTIE'::text END), d.d_year, i.i_brand
+                           Sort Method: external merge  Disk: 2008080kB
+                           Buffers: shared hit=31462 read=491522, temp read=15652 written=251055
+                           ->  Parallel Hash Join  (cost=7459.07..718605.21 rows=6862492 width=47) (actual time=83.060..19483.932 rows=27504533.00 loops=1)
+                                 Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=31462 read=491522
+                                 ->  Parallel Hash Join  (cost=2390.82..659208.90 rows=6862492 width=28) (actual time=23.485..9518.039 rows=27504533.00 loops=1)
+                                       Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=27350 read=491522
+                                       ->  Parallel Seq Scan on store_sales ss  (cost=0.00..589449.80 rows=7200180 width=28) (actual time=0.011..3107.007 rows=28800991.00 loops=1)
+                                             Buffers: shared hit=25926 read=491522
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=22.909..22.911 rows=73049.00 loops=1)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.038..10.526 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+                                 ->  Parallel Hash  (cost=4537.00..4537.00 rows=42500 width=27) (actual time=57.875..57.877 rows=102000.00 loops=1)
+                                       Buckets: 131072  Batches: 1  Memory Usage: 7392kB
+                                       Buffers: shared hit=4112
+                                       ->  Parallel Seq Scan on item i  (cost=0.00..4537.00 rows=42500 width=27) (actual time=0.043..35.087 rows=102000.00 loops=1)
+                                             Buffers: shared hit=4112
+               ->  Materialize  (cost=0.00..5.53 rows=102 width=4) (actual time=0.000..0.004 rows=102.00 loops=1070703)
+                     Storage: Memory  Maximum Storage: 20kB
+                     Buffers: shared hit=4
+                     ->  Seq Scan on store s  (cost=0.00..5.02 rows=102 width=4) (actual time=0.048..0.067 rows=102.00 loops=1)
+                           Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=161
+ Planning Time: 1.345 ms
+ JIT:
+   Functions: 29
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.072 ms (Deform 0.978 ms), Inlining 93.027 ms, Optimization 136.893 ms, Emission 96.810 ms, Total 328.803 ms
+ Execution Time: 108461.960 ms
+(48 rows)
+

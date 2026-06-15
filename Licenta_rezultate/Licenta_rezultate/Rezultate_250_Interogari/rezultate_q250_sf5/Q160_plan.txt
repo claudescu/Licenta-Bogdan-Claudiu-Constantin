@@ -1,0 +1,53 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=224791.86..224792.11 rows=100 width=127) (actual time=748.464..772.088 rows=100.00 loops=1)
+   Buffers: shared hit=189179
+   ->  Sort  (cost=224791.86..224805.36 rows=5400 width=127) (actual time=726.391..750.008 rows=100.00 loops=1)
+         Sort Key: (sum(cs.cs_coupon_amt)) DESC
+         Sort Method: top-N heapsort  Memory: 46kB
+         Buffers: shared hit=189179
+         ->  Finalize GroupAggregate  (cost=221486.21..224585.47 rows=5400 width=127) (actual time=721.439..749.400 rows=1022.00 loops=1)
+               Group Key: i.i_brand, i.i_category
+               Buffers: shared hit=189176
+               ->  Gather Merge  (cost=221486.21..224072.47 rows=21600 width=95) (actual time=721.395..746.358 rows=5100.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=189176
+                     ->  Sort  (cost=220486.15..220499.65 rows=5400 width=95) (actual time=692.883..692.940 rows=1020.00 loops=5)
+                           Sort Key: i.i_brand, i.i_category
+                           Sort Method: quicksort  Memory: 209kB
+                           Buffers: shared hit=189176
+                           Worker 0:  Sort Method: quicksort  Memory: 209kB
+                           Worker 1:  Sort Method: quicksort  Memory: 210kB
+                           Worker 2:  Sort Method: quicksort  Memory: 209kB
+                           Worker 3:  Sort Method: quicksort  Memory: 209kB
+                           ->  Partial HashAggregate  (cost=220070.38..220151.38 rows=5400 width=95) (actual time=691.449..692.110 rows=1020.00 loops=5)
+                                 Group Key: i.i_brand, i.i_category
+                                 Batches: 1  Memory Usage: 1297kB
+                                 Buffers: shared hit=189144
+                                 Worker 0:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 1:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 2:  Batches: 1  Memory Usage: 1297kB
+                                 Worker 3:  Batches: 1  Memory Usage: 1297kB
+                                 ->  Parallel Hash Join  (cost=2906.71..215714.86 rows=348442 width=32) (actual time=23.688..591.750 rows=281159.60 loops=5)
+                                       Hash Cond: (cs.cs_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=189144
+                                       ->  Parallel Seq Scan on catalog_sales cs  (cost=0.00..209451.81 rows=348442 width=13) (actual time=17.238..492.126 rows=281159.60 loops=5)
+                                             Filter: (cs_coupon_amt > '0'::numeric)
+                                             Rows Removed by Filter: 1158738
+                                             Buffers: shared hit=186952
+                                       ->  Parallel Hash  (cost=2509.65..2509.65 rows=31765 width=27) (actual time=6.273..6.274 rows=10800.00 loops=5)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 3904kB
+                                             Buffers: shared hit=2192
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..2509.65 rows=31765 width=27) (actual time=0.038..18.452 rows=54000.00 loops=1)
+                                                   Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=212
+ Planning Time: 1.178 ms
+ JIT:
+   Functions: 104
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 10.631 ms (Deform 6.853 ms), Inlining 0.000 ms, Optimization 5.911 ms, Emission 102.417 ms, Total 118.959 ms
+ Execution Time: 796.055 ms
+(49 rows)
+

@@ -1,0 +1,51 @@
+                                                                                          QUERY PLAN                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=689083.73..689083.86 rows=50 width=89) (actual time=3601.224..3638.395 rows=50.00 loops=1)
+   Buffers: shared hit=101615
+   ->  Sort  (cost=689083.73..689083.86 rows=51 width=89) (actual time=3247.035..3284.202 rows=50.00 loops=1)
+         Sort Key: (sum(ws.ws_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 34kB
+         Buffers: shared hit=101615
+         ->  GroupAggregate  (cost=213187.03..689082.28 rows=51 width=89) (actual time=1820.410..3283.958 rows=103.00 loops=1)
+               Group Key: ca.ca_state, ca.ca_country
+               Buffers: shared hit=101612
+               ->  Gather Merge  (cost=213187.03..644095.72 rows=3598864 width=33) (actual time=1804.818..2648.056 rows=3598637.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=101612
+                     ->  Sort  (cost=212186.97..214436.26 rows=899716 width=33) (actual time=1736.080..1840.633 rows=719727.40 loops=5)
+                           Sort Key: ca.ca_state, ca.ca_country, ws.ws_bill_customer_sk
+                           Sort Method: quicksort  Memory: 59775kB
+                           Buffers: shared hit=101612
+                           Worker 0:  Sort Method: quicksort  Memory: 59733kB
+                           Worker 1:  Sort Method: quicksort  Memory: 60138kB
+                           Worker 2:  Sort Method: quicksort  Memory: 54110kB
+                           Worker 3:  Sort Method: quicksort  Memory: 60011kB
+                           ->  Parallel Hash Join  (cost=13127.08..123209.07 rows=899716 width=33) (actual time=402.190..688.412 rows=719727.40 loops=5)
+                                 Hash Cond: (ws.ws_bill_customer_sk = c.c_customer_sk)
+                                 Buffers: shared hit=101552
+                                 ->  Parallel Seq Scan on web_sales ws  (cost=0.00..102958.66 rows=899866 width=16) (actual time=0.006..61.149 rows=719900.60 loops=5)
+                                       Buffers: shared hit=93960
+                                 ->  Parallel Hash  (cost=11684.37..11684.37 rows=115417 width=21) (actual time=401.421..401.426 rows=55400.00 loops=5)
+                                       Buckets: 524288  Batches: 1  Memory Usage: 19232kB
+                                       Buffers: shared hit=7592
+                                       ->  Parallel Hash Join  (cost=4282.46..11684.37 rows=115417 width=21) (actual time=342.587..378.433 rows=55400.00 loops=5)
+                                             Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                             Buffers: shared hit=7592
+                                             ->  Parallel Seq Scan on customer c  (cost=0.00..6290.17 rows=115417 width=8) (actual time=0.036..9.023 rows=55400.00 loops=5)
+                                                   Buffers: shared hit=5136
+                                             ->  Parallel Hash  (cost=3267.76..3267.76 rows=81176 width=21) (actual time=342.120..342.121 rows=27600.00 loops=5)
+                                                   Buckets: 262144  Batches: 1  Memory Usage: 9664kB
+                                                   Buffers: shared hit=2456
+                                                   ->  Parallel Seq Scan on customer_address ca  (cost=0.00..3267.76 rows=81176 width=21) (actual time=258.626..264.840 rows=27600.00 loops=5)
+                                                         Buffers: shared hit=2456
+ Planning:
+   Buffers: shared hit=142
+ Planning Time: 0.903 ms
+ JIT:
+   Functions: 104
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 8.666 ms (Deform 5.865 ms), Inlining 374.389 ms, Optimization 777.093 ms, Emission 495.941 ms, Total 1656.088 ms
+ Execution Time: 3668.237 ms
+(47 rows)
+

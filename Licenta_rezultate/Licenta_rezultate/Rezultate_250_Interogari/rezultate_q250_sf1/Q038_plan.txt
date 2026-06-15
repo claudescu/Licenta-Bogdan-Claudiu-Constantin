@@ -1,0 +1,45 @@
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=506078.69..506078.71 rows=8 width=56) (actual time=8410.458..8414.565 rows=6.00 loops=1)
+   Sort Key: (round((((count(DISTINCT sr.sr_ticket_number))::numeric / (NULLIF(count(DISTINCT ss.ss_ticket_number), 0))::numeric) * '100'::numeric), 2)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=56620, temp read=8270 written=8272
+   ->  GroupAggregate  (cost=149940.43..506078.57 rows=8 width=56) (actual time=6969.630..8414.457 rows=6.00 loops=1)
+         Group Key: s.s_store_name, s.s_state
+         Buffers: shared hit=56617, temp read=8270 written=8272
+         ->  Gather Merge  (cost=149940.43..478627.11 rows=2745126 width=16) (actual time=6747.970..7930.366 rows=2801729.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 0
+               Buffers: shared hit=56617, temp read=8270 written=8272
+               ->  Sort  (cost=148940.37..150656.08 rows=686282 width=16) (actual time=6746.911..7644.196 rows=2801729.00 loops=1)
+                     Sort Key: s.s_store_name, s.s_state, ss.ss_ticket_number
+                     Sort Method: external merge  Disk: 66160kB
+                     Buffers: shared hit=56617, temp read=8270 written=8272
+                     ->  Parallel Hash Left Join  (cost=7823.89..82410.68 rows=686282 width=16) (actual time=518.304..1789.589 rows=2801729.00 loops=1)
+                           Hash Cond: ((ss.ss_store_sk = sr.sr_store_sk) AND (ss.ss_ticket_number = sr.sr_ticket_number))
+                           Buffers: shared hit=56617
+                           ->  Hash Join  (cost=1.27..68556.11 rows=686282 width=16) (actual time=0.144..852.195 rows=2750943.00 loops=1)
+                                 Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                 Buffers: shared hit=51793
+                                 ->  Parallel Seq Scan on store_sales ss  (cost=0.00..58992.01 rows=720002 width=8) (actual time=0.007..227.482 rows=2880404.00 loops=1)
+                                       Buffers: shared hit=51792
+                                 ->  Hash  (cost=1.12..1.12 rows=12 width=12) (actual time=0.073..0.076 rows=12.00 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=1
+                                       ->  Seq Scan on store s  (cost=0.00..1.12 rows=12 width=12) (actual time=0.062..0.066 rows=12.00 loops=1)
+                                             Buffers: shared hit=1
+                           ->  Parallel Hash  (cost=6023.45..6023.45 rows=119945 width=8) (actual time=511.684..511.685 rows=287867.00 loops=1)
+                                 Buckets: 524288  Batches: 1  Memory Usage: 15360kB
+                                 Buffers: shared hit=4824
+                                 ->  Parallel Seq Scan on store_returns sr  (cost=0.00..6023.45 rows=119945 width=8) (actual time=373.285..434.866 rows=287867.00 loops=1)
+                                       Buffers: shared hit=4824
+ Planning:
+   Buffers: shared hit=127
+ Planning Time: 1.051 ms
+ JIT:
+   Functions: 22
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.528 ms (Deform 1.332 ms), Inlining 100.112 ms, Optimization 162.987 ms, Emission 110.267 ms, Total 375.895 ms
+ Execution Time: 8462.310 ms
+(41 rows)
+

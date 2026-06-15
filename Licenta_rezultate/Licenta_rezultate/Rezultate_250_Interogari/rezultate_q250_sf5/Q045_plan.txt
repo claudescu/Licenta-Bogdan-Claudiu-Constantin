@@ -1,0 +1,61 @@
+                                                                                       QUERY PLAN                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=415335.77..415335.88 rows=44 width=112) (actual time=2433.147..2461.066 rows=26.00 loops=1)
+   Buffers: shared hit=260257
+   ->  Sort  (cost=415335.77..415335.88 rows=44 width=112) (actual time=2402.116..2430.032 rows=26.00 loops=1)
+         Sort Key: (round((sum(ss.ss_net_paid) / (NULLIF(s.s_number_employees, 0))::numeric), 2)) DESC
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=260257
+         ->  Finalize GroupAggregate  (cost=415309.43..415334.57 rows=44 width=112) (actual time=2401.939..2429.940 rows=26.00 loops=1)
+               Group Key: s.s_store_name, s.s_state, s.s_number_employees, s.s_floor_space
+               Buffers: shared hit=260254
+               ->  Gather Merge  (cost=415309.43..415330.50 rows=176 width=48) (actual time=2401.909..2429.857 rows=130.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=260254
+                     ->  Sort  (cost=414309.37..414309.48 rows=44 width=48) (actual time=2369.530..2369.537 rows=26.00 loops=5)
+                           Sort Key: s.s_store_name, s.s_state, s.s_number_employees, s.s_floor_space
+                           Sort Method: quicksort  Memory: 27kB
+                           Buffers: shared hit=260254
+                           Worker 0:  Sort Method: quicksort  Memory: 27kB
+                           Worker 1:  Sort Method: quicksort  Memory: 27kB
+                           Worker 2:  Sort Method: quicksort  Memory: 27kB
+                           Worker 3:  Sort Method: quicksort  Memory: 27kB
+                           ->  Partial HashAggregate  (cost=414307.62..414308.17 rows=44 width=48) (actual time=2369.431..2369.445 rows=26.00 loops=5)
+                                 Group Key: s.s_store_name, s.s_state, s.s_number_employees, s.s_floor_space
+                                 Batches: 1  Memory Usage: 48kB
+                                 Buffers: shared hit=260194
+                                 Worker 0:  Batches: 1  Memory Usage: 48kB
+                                 Worker 1:  Batches: 1  Memory Usage: 48kB
+                                 Worker 2:  Batches: 1  Memory Usage: 48kB
+                                 Worker 3:  Batches: 1  Memory Usage: 48kB
+                                 ->  Parallel Hash Join  (cost=2394.23..374775.85 rows=3162542 width=22) (actual time=27.188..1687.050 rows=2585852.00 loops=5)
+                                       Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                       Buffers: shared hit=260194
+                                       ->  Hash Join  (cost=3.41..341367.81 rows=3310407 width=26) (actual time=20.402..1271.830 rows=2648425.00 loops=5)
+                                             Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                             Buffers: shared hit=258770
+                                             ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=14) (actual time=0.023..243.962 rows=2880010.40 loops=5)
+                                                   Buffers: shared hit=258760
+                                             ->  Hash  (cost=2.78..2.78 rows=50 width=20) (actual time=20.342..20.344 rows=51.00 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                   Buffers: shared hit=10
+                                                   ->  Seq Scan on store s  (cost=0.00..2.78 rows=50 width=20) (actual time=20.291..20.317 rows=51.00 loops=5)
+                                                         Filter: ((s_number_employees > 0) AND (s_floor_space > 0))
+                                                         Rows Removed by Filter: 1
+                                                         Buffers: shared hit=10
+                                       ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=4) (actual time=6.220..6.220 rows=14609.80 loops=5)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                             Buffers: shared hit=1424
+                                             ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=4) (actual time=0.047..15.756 rows=73049.00 loops=1)
+                                                   Buffers: shared hit=1424
+ Planning:
+   Buffers: shared hit=154
+ Planning Time: 1.393 ms
+ JIT:
+   Functions: 139
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 13.420 ms (Deform 7.431 ms), Inlining 0.000 ms, Optimization 6.468 ms, Emission 126.048 ms, Total 145.937 ms
+ Execution Time: 2495.496 ms
+(57 rows)
+

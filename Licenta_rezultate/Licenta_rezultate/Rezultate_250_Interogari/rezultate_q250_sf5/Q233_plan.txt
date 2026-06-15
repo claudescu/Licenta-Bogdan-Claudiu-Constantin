@@ -1,0 +1,68 @@
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=590808.85..590809.10 rows=100 width=136) (actual time=4873.684..4874.951 rows=100.00 loops=1)
+   Buffers: shared hit=262429
+   ->  Sort  (cost=590808.85..591166.63 rows=143112 width=136) (actual time=4288.069..4289.327 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 45kB
+         Buffers: shared hit=262429
+         ->  Finalize HashAggregate  (cost=581761.41..585339.21 rows=143112 width=136) (actual time=4269.316..4284.848 rows=13020.00 loops=1)
+               Group Key: s.s_state, i.i_brand, p.p_purpose, d.d_year
+               Batches: 1  Memory Usage: 18457kB
+               Buffers: shared hit=262426
+               ->  Gather  (cost=509489.85..568881.33 rows=572448 width=104) (actual time=4190.549..4210.434 rows=55923.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=262426
+                     ->  Partial HashAggregate  (cost=508489.85..510636.53 rows=143112 width=104) (actual time=4158.018..4172.215 rows=11184.60 loops=5)
+                           Group Key: s.s_state, i.i_brand, p.p_purpose, d.d_year
+                           Batches: 1  Memory Usage: 14361kB
+                           Buffers: shared hit=262426
+                           Worker 0:  Batches: 1  Memory Usage: 14361kB
+                           Worker 1:  Batches: 1  Memory Usage: 14361kB
+                           Worker 2:  Batches: 1  Memory Usage: 14361kB
+                           Worker 3:  Batches: 1  Memory Usage: 14361kB
+                           ->  Parallel Hash Join  (cost=5317.43..453525.54 rows=3140818 width=41) (actual time=421.611..3050.611 rows=2652866.80 loops=5)
+                                 Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=262426
+                                 ->  Hash Join  (cost=2410.72..420365.19 rows=3140818 width=28) (actual time=415.722..2427.342 rows=2652866.80 loops=5)
+                                       Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                       Buffers: shared hit=260234
+                                       ->  Hash Join  (cost=2407.55..376637.98 rows=3284229 width=29) (actual time=5.339..1678.246 rows=2685427.80 loops=5)
+                                             Hash Cond: (ss.ss_promo_sk = p.p_promo_sk)
+                                             Buffers: shared hit=260224
+                                             ->  Parallel Hash Join  (cost=2390.82..330881.88 rows=3439223 width=25) (actual time=5.102..1332.313 rows=2750130.80 loops=5)
+                                                   Hash Cond: (ss.ss_sold_date_sk = d.d_date_sk)
+                                                   Buffers: shared hit=260184
+                                                   ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=25) (actual time=0.023..274.262 rows=2880010.40 loops=5)
+                                                         Buffers: shared hit=258760
+                                                   ->  Parallel Hash  (cost=1853.70..1853.70 rows=42970 width=8) (actual time=4.941..4.944 rows=14609.80 loops=5)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 3904kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim d  (cost=0.00..1853.70 rows=42970 width=8) (actual time=0.011..11.440 rows=73049.00 loops=1)
+                                                               Buffers: shared hit=1424
+                                             ->  Hash  (cost=11.88..11.88 rows=388 width=12) (actual time=0.224..0.225 rows=388.00 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 25kB
+                                                   Buffers: shared hit=40
+                                                   ->  Seq Scan on promotion p  (cost=0.00..11.88 rows=388 width=12) (actual time=0.063..0.174 rows=388.00 loops=5)
+                                                         Buffers: shared hit=40
+                                       ->  Hash  (cost=2.52..2.52 rows=52 width=7) (actual time=410.353..410.354 rows=52.00 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             Buffers: shared hit=10
+                                             ->  Seq Scan on store s  (cost=0.00..2.52 rows=52 width=7) (actual time=410.301..410.322 rows=52.00 loops=5)
+                                                   Buffers: shared hit=10
+                                 ->  Parallel Hash  (cost=2509.65..2509.65 rows=31765 width=21) (actual time=5.730..5.731 rows=10800.00 loops=5)
+                                       Buckets: 65536  Batches: 1  Memory Usage: 3488kB
+                                       Buffers: shared hit=2192
+                                       ->  Parallel Seq Scan on item i  (cost=0.00..2509.65 rows=31765 width=21) (actual time=0.045..16.601 rows=54000.00 loops=1)
+                                             Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=177
+ Planning Time: 1.121 ms
+ JIT:
+   Functions: 218
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 15.115 ms (Deform 8.312 ms), Inlining 400.805 ms, Optimization 1327.587 ms, Emission 908.887 ms, Total 2652.394 ms
+ Execution Time: 4905.647 ms
+(64 rows)
+

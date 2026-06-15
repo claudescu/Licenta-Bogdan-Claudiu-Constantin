@@ -1,0 +1,48 @@
+                                                                                 QUERY PLAN                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4755203.30..4755203.80 rows=200 width=82) (actual time=28615.023..28615.054 rows=200.00 loops=1)
+   Buffers: shared hit=260966, temp read=90412 written=170122
+   ->  Sort  (cost=4755203.30..4789631.53 rows=13771292 width=82) (actual time=28180.955..28180.972 rows=200.00 loops=1)
+         Sort Key: s.s_store_name, (rank() OVER w1)
+         Sort Method: top-N heapsort  Memory: 49kB
+         Buffers: shared hit=260966, temp read=90412 written=170122
+         ->  WindowAgg  (cost=3884592.14..4160017.96 rows=13771292 width=82) (actual time=26721.029..27890.729 rows=1449259.00 loops=1)
+               Window: w1 AS (PARTITION BY ss.ss_store_sk ORDER BY (sum(ss.ss_net_paid)) ROWS UNBOUNDED PRECEDING)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=260960, temp read=90412 written=170122
+               ->  Sort  (cost=3884592.12..3919020.35 rows=13771292 width=74) (actual time=26720.978..27244.517 rows=1449259.00 loops=1)
+                     Sort Key: ss.ss_store_sk, (sum(ss.ss_net_paid)) DESC
+                     Sort Method: external merge  Disk: 93064kB
+                     Buffers: shared hit=260960, temp read=90412 written=170122
+                     ->  HashAggregate  (cost=1505928.98..1893246.56 rows=13771292 width=74) (actual time=18562.249..22922.052 rows=1449259.00 loops=1)
+                           Group Key: s.s_store_name, ss.ss_store_sk, i.i_product_name, i.i_category
+                           Planned Partitions: 64  Batches: 65  Memory Usage: 131609kB  Disk Usage: 650760kB
+                           Buffers: shared hit=260954, temp read=78779 written=158487
+                           ->  Hash Join  (cost=3410.17..787239.68 rows=13771292 width=40) (actual time=29.619..10193.501 rows=13752053.00 loops=1)
+                                 Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                 Buffers: shared hit=260954
+                                 ->  Hash Join  (cost=3.17..594477.41 rows=13771292 width=19) (actual time=0.095..6131.106 rows=13752053.00 loops=1)
+                                       Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                                       Buffers: shared hit=258762
+                                       ->  Seq Scan on store_sales ss  (cost=0.00..402760.96 rows=14400096 width=14) (actual time=0.027..1144.920 rows=14400052.00 loops=1)
+                                             Buffers: shared hit=258760
+                                       ->  Hash  (cost=2.52..2.52 rows=52 width=9) (actual time=0.054..0.055 rows=52.00 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             Buffers: shared hit=2
+                                             ->  Seq Scan on store s  (cost=0.00..2.52 rows=52 width=9) (actual time=0.034..0.042 rows=52.00 loops=1)
+                                                   Buffers: shared hit=2
+                                 ->  Hash  (cost=2732.00..2732.00 rows=54000 width=29) (actual time=29.145..29.147 rows=54000.00 loops=1)
+                                       Buckets: 65536  Batches: 1  Memory Usage: 3906kB
+                                       Buffers: shared hit=2192
+                                       ->  Seq Scan on item i  (cost=0.00..2732.00 rows=54000 width=29) (actual time=0.032..19.035 rows=54000.00 loops=1)
+                                             Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=165
+ Planning Time: 15.775 ms
+ JIT:
+   Functions: 34
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 2.759 ms (Deform 1.277 ms), Inlining 84.946 ms, Optimization 238.827 ms, Emission 163.629 ms, Total 490.161 ms
+ Execution Time: 28754.974 ms
+(44 rows)
+

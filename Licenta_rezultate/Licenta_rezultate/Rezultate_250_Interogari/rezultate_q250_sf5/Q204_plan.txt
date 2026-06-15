@@ -1,0 +1,58 @@
+                                                                                     QUERY PLAN                                                                                     
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2240732.91..2240733.16 rows=100 width=71) (actual time=30796.755..30796.781 rows=100.00 loops=1)
+   Buffers: shared hit=268549, temp read=91308 written=187150
+   ->  Sort  (cost=2240732.91..2251703.27 rows=4388146 width=71) (actual time=30281.425..30281.442 rows=100.00 loops=1)
+         Sort Key: (sum(ss.ss_net_paid)) DESC
+         Sort Method: top-N heapsort  Memory: 44kB
+         Buffers: shared hit=268549, temp read=91308 written=187150
+         ->  HashAggregate  (cost=1669860.24..2073021.12 rows=4388146 width=71) (actual time=18724.489..28917.329 rows=5450765.00 loops=1)
+               Group Key: c.c_customer_id, ca.ca_state, s.s_store_name, i.i_category
+               Filter: (sum(ss.ss_net_paid) > '500'::numeric)
+               Planned Partitions: 64  Batches: 65  Memory Usage: 131609kB  Disk Usage: 781416kB
+               Rows Removed by Filter: 1523859
+               Buffers: shared hit=268546, temp read=91308 written=187150
+               ->  Hash Join  (cost=24148.42..982841.18 rows=13164437 width=37) (actual time=294.744..11799.527 rows=13427522.00 loops=1)
+                     Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                     Buffers: shared hit=268546
+                     ->  Hash Join  (cost=20741.42..798423.17 rows=13164437 width=35) (actual time=265.124..8421.524 rows=13427522.00 loops=1)
+                           Hash Cond: (ss.ss_store_sk = s.s_store_sk)
+                           Buffers: shared hit=266354
+                           ->  Hash Join  (cost=20738.25..615154.89 rows=13765532 width=34) (actual time=265.020..6604.344 rows=13752008.00 loops=1)
+                                 Hash Cond: (ss.ss_customer_sk = c.c_customer_sk)
+                                 Buffers: shared hit=266352
+                                 ->  Seq Scan on store_sales ss  (cost=0.00..402760.96 rows=14400096 width=18) (actual time=0.012..1238.895 rows=14400052.00 loops=1)
+                                       Buffers: shared hit=258760
+                                 ->  Hash  (cost=17275.75..17275.75 rows=277000 width=24) (actual time=262.466..262.471 rows=277000.00 loops=1)
+                                       Buckets: 524288  Batches: 1  Memory Usage: 20032kB
+                                       Buffers: shared hit=7592
+                                       ->  Hash Join  (cost=5561.00..17275.75 rows=277000 width=24) (actual time=47.087..186.450 rows=277000.00 loops=1)
+                                             Hash Cond: (c.c_current_addr_sk = ca.ca_address_sk)
+                                             Buffers: shared hit=7592
+                                             ->  Seq Scan on customer c  (cost=0.00..7906.00 rows=277000 width=25) (actual time=0.020..20.572 rows=277000.00 loops=1)
+                                                   Buffers: shared hit=5136
+                                             ->  Hash  (cost=3836.00..3836.00 rows=138000 width=7) (actual time=45.746..45.748 rows=138000.00 loops=1)
+                                                   Buckets: 262144  Batches: 1  Memory Usage: 7423kB
+                                                   Buffers: shared hit=2456
+                                                   ->  Seq Scan on customer_address ca  (cost=0.00..3836.00 rows=138000 width=7) (actual time=0.037..23.109 rows=138000.00 loops=1)
+                                                         Buffers: shared hit=2456
+                           ->  Hash  (cost=2.52..2.52 rows=52 width=9) (actual time=0.084..0.085 rows=52.00 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                 Buffers: shared hit=2
+                                 ->  Seq Scan on store s  (cost=0.00..2.52 rows=52 width=9) (actual time=0.061..0.070 rows=52.00 loops=1)
+                                       Buffers: shared hit=2
+                     ->  Hash  (cost=2732.00..2732.00 rows=54000 width=10) (actual time=29.294..29.294 rows=54000.00 loops=1)
+                           Buckets: 65536  Batches: 1  Memory Usage: 2853kB
+                           Buffers: shared hit=2192
+                           ->  Seq Scan on item i  (cost=0.00..2732.00 rows=54000 width=10) (actual time=0.050..19.995 rows=54000.00 loops=1)
+                                 Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=241
+ Planning Time: 1.469 ms
+ JIT:
+   Functions: 48
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 3.806 ms (Deform 1.828 ms), Inlining 112.955 ms, Optimization 269.179 ms, Emission 193.534 ms, Total 579.473 ms
+ Execution Time: 30958.158 ms
+(54 rows)
+

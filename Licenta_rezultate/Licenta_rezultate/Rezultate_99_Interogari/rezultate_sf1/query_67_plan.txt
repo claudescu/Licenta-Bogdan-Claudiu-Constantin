@@ -1,0 +1,76 @@
+                                                                                                                                        QUERY PLAN                                                                                                                                        
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=77664.26..77664.51 rows=100 width=119) (actual time=2478.130..2478.408 rows=100.00 loops=1)
+   Buffers: shared hit=56887
+   ->  Sort  (cost=77664.26..77825.00 rows=64296 width=119) (actual time=2478.128..2478.399 rows=100.00 loops=1)
+         Sort Key: dw1.i_category NULLS FIRST, dw1.i_class NULLS FIRST, dw1.i_brand NULLS FIRST, dw1.i_product_name NULLS FIRST, dw1.d_year NULLS FIRST, dw1.d_qoy NULLS FIRST, dw1.d_moy NULLS FIRST, dw1.s_store_id NULLS FIRST, dw1.sumsales NULLS FIRST, (rank() OVER w1) NULLS FIRST
+         Sort Method: top-N heapsort  Memory: 34kB
+         Buffers: shared hit=56887
+         ->  WindowAgg  (cost=73921.01..75206.91 rows=64296 width=119) (actual time=2368.780..2477.947 rows=1104.00 loops=1)
+               Window: w1 AS (PARTITION BY dw1.i_category ORDER BY dw1.sumsales ROWS UNBOUNDED PRECEDING)
+               Run Condition: (rank() OVER w1 <= 100)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=56881
+               ->  Sort  (cost=73920.99..74081.73 rows=64296 width=111) (actual time=2368.763..2420.680 rows=505178.00 loops=1)
+                     Sort Key: dw1.i_category, dw1.sumsales DESC
+                     Sort Method: quicksort  Memory: 64297kB
+                     Buffers: shared hit=56881
+                     ->  Subquery Scan on dw1  (cost=66171.63..68786.17 rows=64296 width=111) (actual time=587.295..1448.777 rows=505178.00 loops=1)
+                           Buffers: shared hit=56881
+                           ->  GroupAggregate  (cost=66171.63..68786.17 rows=64296 width=111) (actual time=587.291..1399.517 rows=505178.00 loops=1)
+                                 Group Key: item.i_category, item.i_class, item.i_brand, item.i_product_name, date_dim.d_year, date_dim.d_qoy, date_dim.d_moy, store.s_store_id
+                                 Group Key: item.i_category, item.i_class, item.i_brand, item.i_product_name, date_dim.d_year, date_dim.d_qoy, date_dim.d_moy
+                                 Group Key: item.i_category, item.i_class, item.i_brand, item.i_product_name, date_dim.d_year, date_dim.d_qoy
+                                 Group Key: item.i_category, item.i_class, item.i_brand, item.i_product_name, date_dim.d_year
+                                 Group Key: item.i_category, item.i_class, item.i_brand, item.i_product_name
+                                 Group Key: item.i_category, item.i_class, item.i_brand
+                                 Group Key: item.i_category, item.i_class
+                                 Group Key: item.i_category
+                                 Group Key: ()
+                                 Buffers: shared hit=56881
+                                 ->  Gather Merge  (cost=66171.63..67644.25 rows=12299 width=89) (actual time=587.246..898.455 rows=541160.00 loops=1)
+                                       Workers Planned: 4
+                                       Workers Launched: 4
+                                       Buffers: shared hit=56881
+                                       ->  Sort  (cost=65171.58..65179.26 rows=3075 width=89) (actual time=540.124..569.587 rows=108232.00 loops=5)
+                                             Sort Key: item.i_category, item.i_class, item.i_brand, item.i_product_name, date_dim.d_year, date_dim.d_qoy, date_dim.d_moy, store.s_store_id
+                                             Sort Method: quicksort  Memory: 14021kB
+                                             Buffers: shared hit=56881
+                                             Worker 0:  Sort Method: quicksort  Memory: 14325kB
+                                             Worker 1:  Sort Method: quicksort  Memory: 16103kB
+                                             Worker 2:  Sort Method: quicksort  Memory: 16060kB
+                                             Worker 3:  Sort Method: quicksort  Memory: 13715kB
+                                             ->  Hash Join  (cost=3197.35..64993.44 rows=3075 width=89) (actual time=14.835..206.620 rows=108232.00 loops=5)
+                                                   Hash Cond: (store_sales.ss_item_sk = item.i_item_sk)
+                                                   Buffers: shared hit=56821
+                                                   ->  Hash Join  (cost=2072.35..63826.16 rows=3075 width=43) (actual time=2.017..161.059 rows=108232.00 loops=5)
+                                                         Hash Cond: (store_sales.ss_store_sk = store.s_store_sk)
+                                                         Buffers: shared hit=53221
+                                                         ->  Parallel Hash Join  (cost=2071.08..63782.04 rows=3226 width=30) (actual time=1.964..141.097 rows=110794.00 loops=5)
+                                                               Hash Cond: (store_sales.ss_sold_date_sk = date_dim.d_date_sk)
+                                                               Buffers: shared hit=53216
+                                                               ->  Parallel Seq Scan on store_sales  (cost=0.00..58992.01 rows=720002 width=22) (actual time=0.020..49.563 rows=576080.80 loops=5)
+                                                                     Buffers: shared hit=51792
+                                                               ->  Parallel Hash  (cost=2068.55..2068.55 rows=202 width=16) (actual time=1.802..1.804 rows=73.20 loops=5)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                                     Buffers: shared hit=1424
+                                                                     ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=202 width=16) (actual time=1.590..2.921 rows=122.00 loops=3)
+                                                                           Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                                           Rows Removed by Filter: 24228
+                                                                           Buffers: shared hit=1424
+                                                         ->  Hash  (cost=1.12..1.12 rows=12 width=21) (actual time=0.034..0.035 rows=12.00 loops=5)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               Buffers: shared hit=5
+                                                               ->  Seq Scan on store  (cost=0.00..1.12 rows=12 width=21) (actual time=0.026..0.028 rows=12.00 loops=5)
+                                                                     Buffers: shared hit=5
+                                                   ->  Hash  (cost=900.00..900.00 rows=18000 width=54) (actual time=12.560..12.561 rows=18000.00 loops=5)
+                                                         Buckets: 32768  Batches: 1  Memory Usage: 1826kB
+                                                         Buffers: shared hit=3600
+                                                         ->  Seq Scan on item  (cost=0.00..900.00 rows=18000 width=54) (actual time=0.053..6.664 rows=18000.00 loops=5)
+                                                               Buffers: shared hit=3600
+ Planning:
+   Buffers: shared hit=186
+ Planning Time: 1.677 ms
+ Execution Time: 2482.801 ms
+(72 rows)
+

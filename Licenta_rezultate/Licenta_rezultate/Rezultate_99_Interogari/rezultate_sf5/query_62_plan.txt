@@ -1,0 +1,68 @@
+                                                                                      QUERY PLAN                                                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=109919.55..110111.11 rows=100 width=87) (actual time=603.283..636.874 rows=100.00 loops=1)
+   Buffers: shared hit=95436
+   ->  Finalize GroupAggregate  (cost=109919.55..110333.32 rows=216 width=87) (actual time=579.693..613.270 rows=100.00 loops=1)
+         Group Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)), ship_mode.sm_type, web_site.web_name
+         Buffers: shared hit=95436
+         ->  Gather Merge  (cost=109919.55..110313.34 rows=864 width=87) (actual time=579.011..613.061 rows=501.00 loops=1)
+               Workers Planned: 4
+               Workers Launched: 4
+               Buffers: shared hit=95436
+               ->  Partial GroupAggregate  (cost=108919.49..109210.38 rows=216 width=87) (actual time=509.595..558.242 rows=221.80 loops=5)
+                     Group Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)), ship_mode.sm_type, web_site.web_name
+                     Buffers: shared hit=95436
+                     ->  Sort  (cost=108919.49..108931.02 rows=4611 width=55) (actual time=509.321..523.872 rows=124653.40 loops=5)
+                           Sort Key: ("substring"((warehouse.w_warehouse_name)::text, 1, 20)) NULLS FIRST, ship_mode.sm_type NULLS FIRST, web_site.web_name NULLS FIRST
+                           Sort Method: quicksort  Memory: 15562kB
+                           Buffers: shared hit=95436
+                           Worker 0:  Sort Method: quicksort  Memory: 13824kB
+                           Worker 1:  Sort Method: quicksort  Memory: 13607kB
+                           Worker 2:  Sort Method: quicksort  Memory: 14475kB
+                           Worker 3:  Sort Method: quicksort  Memory: 13754kB
+                           ->  Hash Join  (cost=2076.69..108638.89 rows=4611 width=55) (actual time=23.731..390.218 rows=144725.00 loops=5)
+                                 Hash Cond: (web_sales.ws_web_site_sk = web_site.web_site_sk)
+                                 Buffers: shared hit=95404
+                                 ->  Hash Join  (cost=2073.92..108561.19 rows=4613 width=37) (actual time=1.726..330.599 rows=144729.80 loops=5)
+                                       Hash Cond: (web_sales.ws_ship_mode_sk = ship_mode.sm_ship_mode_sk)
+                                       Buffers: shared hit=95394
+                                       ->  Hash Join  (cost=2072.47..108496.30 rows=4615 width=33) (actual time=1.662..307.331 rows=144738.60 loops=5)
+                                             Hash Cond: (web_sales.ws_warehouse_sk = warehouse.w_warehouse_sk)
+                                             Buffers: shared hit=95389
+                                             ->  Parallel Hash Join  (cost=2071.31..108431.68 rows=4617 width=20) (actual time=1.619..285.309 rows=144760.40 loops=5)
+                                                   Hash Cond: (web_sales.ws_ship_date_sk = date_dim.d_date_sk)
+                                                   Buffers: shared hit=95384
+                                                   ->  Parallel Seq Scan on web_sales  (cost=0.00..102958.66 rows=899866 width=20) (actual time=0.036..109.971 rows=719900.60 loops=5)
+                                                         Buffers: shared hit=93960
+                                                   ->  Parallel Hash  (cost=2068.55..2068.55 rows=221 width=4) (actual time=1.457..1.458 rows=73.20 loops=5)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                                                         Buffers: shared hit=1424
+                                                         ->  Parallel Seq Scan on date_dim  (cost=0.00..2068.55 rows=221 width=4) (actual time=3.735..7.158 rows=366.00 loops=1)
+                                                               Filter: ((d_month_seq >= 1200) AND (d_month_seq <= 1211))
+                                                               Rows Removed by Filter: 72683
+                                                               Buffers: shared hit=1424
+                                             ->  Hash  (cost=1.07..1.07 rows=7 width=21) (actual time=0.035..0.036 rows=7.00 loops=5)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                   Buffers: shared hit=5
+                                                   ->  Seq Scan on warehouse  (cost=0.00..1.07 rows=7 width=21) (actual time=0.030..0.031 rows=7.00 loops=5)
+                                                         Buffers: shared hit=5
+                                       ->  Hash  (cost=1.20..1.20 rows=20 width=12) (actual time=0.056..0.057 rows=20.00 loops=5)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                             Buffers: shared hit=5
+                                             ->  Seq Scan on ship_mode  (cost=0.00..1.20 rows=20 width=12) (actual time=0.048..0.050 rows=20.00 loops=5)
+                                                   Buffers: shared hit=5
+                                 ->  Hash  (cost=2.34..2.34 rows=34 width=11) (actual time=21.986..21.986 rows=34.00 loops=5)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                       Buffers: shared hit=10
+                                       ->  Seq Scan on web_site  (cost=0.00..2.34 rows=34 width=11) (actual time=21.950..21.960 rows=34.00 loops=5)
+                                             Buffers: shared hit=10
+ Planning:
+   Buffers: shared hit=215
+ Planning Time: 1.297 ms
+ JIT:
+   Functions: 209
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 13.355 ms (Deform 4.660 ms), Inlining 0.000 ms, Optimization 4.973 ms, Emission 128.455 ms, Total 146.783 ms
+ Execution Time: 656.960 ms
+(64 rows)
+

@@ -1,0 +1,53 @@
+                                                                                                           QUERY PLAN                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=349913.16..349913.41 rows=100 width=109) (actual time=1350.898..1377.942 rows=100.00 loops=1)
+   Buffers: shared hit=261012
+   ->  Sort  (cost=349913.16..349958.01 rows=17937 width=109) (actual time=1314.419..1341.454 rows=100.00 loops=1)
+         Sort Key: (round((((i.i_current_price - i.i_wholesale_cost) / NULLIF(i.i_current_price, '0'::numeric)) * '100'::numeric), 2))
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=261012
+         ->  Finalize GroupAggregate  (cost=338932.89..349227.62 rows=17937 width=109) (actual time=1255.708..1338.083 rows=11895.00 loops=1)
+               Group Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+               Buffers: shared hit=261012
+               ->  Gather Merge  (cost=338932.89..347523.61 rows=71748 width=77) (actual time=1255.630..1308.215 rows=59475.00 loops=1)
+                     Workers Planned: 4
+                     Workers Launched: 4
+                     Buffers: shared hit=261012
+                     ->  Sort  (cost=337932.83..337977.67 rows=17937 width=77) (actual time=1226.019..1227.331 rows=11895.00 loops=5)
+                           Sort Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+                           Sort Method: quicksort  Memory: 2010kB
+                           Buffers: shared hit=261012
+                           Worker 0:  Sort Method: quicksort  Memory: 2010kB
+                           Worker 1:  Sort Method: quicksort  Memory: 2010kB
+                           Worker 2:  Sort Method: quicksort  Memory: 2010kB
+                           Worker 3:  Sort Method: quicksort  Memory: 2010kB
+                           ->  Partial HashAggregate  (cost=336441.31..336665.52 rows=17937 width=77) (actual time=1210.965..1216.854 rows=11895.00 loops=5)
+                                 Group Key: i.i_product_name, i.i_category, i.i_current_price, i.i_wholesale_cost
+                                 Batches: 1  Memory Usage: 6681kB
+                                 Buffers: shared hit=260952
+                                 Worker 0:  Batches: 1  Memory Usage: 6681kB
+                                 Worker 1:  Batches: 1  Memory Usage: 6681kB
+                                 Worker 2:  Batches: 1  Memory Usage: 6681kB
+                                 Worker 3:  Batches: 1  Memory Usage: 6681kB
+                                 ->  Parallel Hash Join  (cost=3197.48..318495.19 rows=1196408 width=47) (actual time=26.922..813.591 rows=575410.60 loops=5)
+                                       Hash Cond: (ss.ss_item_sk = i.i_item_sk)
+                                       Buffers: shared hit=260952
+                                       ->  Parallel Seq Scan on store_sales ss  (cost=0.00..294760.24 rows=3600024 width=10) (actual time=0.026..206.085 rows=2880010.40 loops=5)
+                                             Buffers: shared hit=258760
+                                       ->  Parallel Hash  (cost=3065.53..3065.53 rows=10556 width=41) (actual time=26.576..26.578 rows=2379.00 loops=5)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 1280kB
+                                             Buffers: shared hit=2192
+                                             ->  Parallel Seq Scan on item i  (cost=0.00..3065.53 rows=10556 width=41) (actual time=14.743..25.311 rows=2379.00 loops=5)
+                                                   Filter: ((i_current_price > '0'::numeric) AND (round((((i_current_price - i_wholesale_cost) / NULLIF(i_current_price, '0'::numeric)) * '100'::numeric), 2) < '20'::numeric))
+                                                   Rows Removed by Filter: 8421
+                                                   Buffers: shared hit=2192
+ Planning:
+   Buffers: shared hit=214
+ Planning Time: 1.319 ms
+ JIT:
+   Functions: 104
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 10.177 ms (Deform 5.040 ms), Inlining 0.000 ms, Optimization 4.851 ms, Emission 105.447 ms, Total 120.476 ms
+ Execution Time: 1407.872 ms
+(49 rows)
+
