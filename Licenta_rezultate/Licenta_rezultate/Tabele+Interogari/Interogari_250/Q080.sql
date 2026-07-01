@@ -19,6 +19,4 @@ FROM lunar_brand
 ORDER BY i_brand, i_category, s_state, d_year, d_moy
 LIMIT 200;
 
--- ===========================================================
--- BLOC 8: 7 JOIN-URI (Q081–Q085) — 5 interogări
--- ===========================================================
+
