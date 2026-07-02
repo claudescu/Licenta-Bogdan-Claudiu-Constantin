@@ -12,6 +12,5 @@ GROUP BY i.i_category, i.i_product_name, i.i_brand
 ORDER BY i.i_category, rank_in_categorie
 LIMIT 100;
 
--- ===========================================================
--- BLOC 3: 2 JOIN-URI (Q031–Q045)
--- ===========================================================
+
+
