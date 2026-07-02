@@ -9,6 +9,5 @@ GROUP BY ss_store_sk
 HAVING SUM(ss_net_paid) > 100000 AND SUM(ss_net_profit) > 0
 ORDER BY total_incasat DESC;
 
--- ===========================================================
--- BLOC 2: 1 JOIN (Q016–Q030)
--- ===========================================================
+
+
