@@ -22,3 +22,4 @@ COPY web_page FROM 'C:/temp/web_page.csv' (FORMAT 'csv', DELIMITER ',', header 1
 COPY web_returns FROM 'C:/temp/web_returns.csv' (FORMAT 'csv', DELIMITER ',', header 1, quote '"');
 COPY web_sales FROM 'C:/temp/web_sales.csv' (FORMAT 'csv', DELIMITER ',', header 1, quote '"');
 COPY web_site FROM 'C:/temp/web_site.csv' (FORMAT 'csv', DELIMITER ',', header 1, quote '"');
+-
